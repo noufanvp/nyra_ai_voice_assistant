@@ -335,11 +335,6 @@ class MainWindow(QMainWindow):
         self._loading_panel.setVisible(is_loading)
         self._dock.setEnabled(not is_loading)
 
-        if upper == "SLEEPING":
-            self._dock.set_wake_active(False)
-        elif not is_loading:
-            self._dock.set_wake_active(True)
-
     def _on_loading_progress(self, message: str, percent: int) -> None:
         self._loading_label.setText(message)
         if percent < 0:

@@ -170,8 +170,7 @@ class WhisperTranscriber:
                 compression_ratio_threshold=2.4,
                 condition_on_previous_text=False,
                 initial_prompt=(
-                    "Hello, I have a question about science, math, biology, photosynthesis, "
-                    "multiplication, mathematics, technology, or general topics."
+                    "Hello, I am speaking clearly to Nyra, asking questions, commands, and conversational topics."
                 ),
             )
 

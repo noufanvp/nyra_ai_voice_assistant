@@ -77,6 +77,10 @@ wake_active = threading.Event()
 # While SET, no audio is recorded or processed by any thread.
 mic_muted = threading.Event()
 
+# ptt_active is SET while the user is physically pressing & holding the mic button.
+# While SET, VADRecorder captures audio. When CLEARED, recording stops and processes.
+ptt_active = threading.Event()
+
 
 
 def _flush_queue(q: queue.Queue) -> None:
@@ -108,116 +112,16 @@ signal.signal(signal.SIGINT, _sigint_handler)
 
 
 # ---------------------------------------------------------------------------
-# Wake Word Worker (Thread 0)
-# ---------------------------------------------------------------------------
-
-# Cooldown timestamp to suppress wake word detection right after manual sleep
-_manual_sleep_until: float = 0.0
-
-# Inactivity timer tracking
+# Activity timestamp tracking
 _last_activity_time: float = time.monotonic()
 _activity_lock = threading.Lock()
 
 
 def touch_activity() -> None:
-    """Record activity timestamp to prevent premature auto-sleep timeouts."""
+    """Record activity timestamp."""
     global _last_activity_time
     with _activity_lock:
         _last_activity_time = time.monotonic()
-
-
-def _get_idle_seconds() -> float:
-    global _last_activity_time
-    with _activity_lock:
-        return time.monotonic() - _last_activity_time
-
-
-def wake_word_worker(
-    recorder: VADRecorder,
-    transcriber: WhisperTranscriber,
-    tts: LocalTTSEngine,
-    audio_queue: queue.Queue,
-    transcript_queue: queue.Queue,
-    stop_event: threading.Event,
-    bridge: UIBridge,
-) -> None:
-    """
-    Thread 0 (UI-aware): Listens continuously for the wake word when the assistant is sleeping.
-    """
-    logger = logging.getLogger("wake_word")
-    cfg = CONFIG.wake_word
-    was_active = False
-
-    while not stop_event.is_set():
-        if mic_muted.is_set():
-            time.sleep(0.1)
-            continue
-
-        # ── Phase 1: sleeping — wait for wake word ──────────────────────
-        if not wake_active.is_set():
-            was_active = False
-            bridge.emit_state("SLEEPING")
-            audio = recorder.record(
-                max_duration_s=2.5,
-                abort_check=lambda: stop_event.is_set() or wake_active.is_set() or mic_muted.is_set(),
-            )
-            if audio is None or len(audio) == 0 or wake_active.is_set() or stop_event.is_set() or mic_muted.is_set():
-                continue
-
-            # Ignore wake scan if within manual sleep cooldown window
-            if time.monotonic() < _manual_sleep_until:
-                logger.debug("Wake scan ignored (manual sleep cooldown).")
-                continue
-
-            text = transcriber.transcribe_wake_word(audio, CONFIG.audio.sample_rate)
-            logger.info("Wake scan heard: '%s'", text)  # INFO so you can tune variants
-
-            # Check for any accepted phrase
-            detected = any(phrase in text for phrase in cfg.phrases)
-            if not detected or wake_active.is_set() or stop_event.is_set():
-                continue
-
-            logger.info("🔔 Wake word detected! Activating Nyra…")
-            touch_activity()
-            wake_active.set()
-            bridge.emit_state("IDLE")
-
-            # Speak greeting via TTS
-            speaking_lock.set()
-            bridge.emit_state("SPEAKING")
-            bridge.emit_assistant_token(cfg.greeting)
-            samples, sr = tts.synthesize(cfg.greeting)
-            if len(samples) > 0 and wake_active.is_set() and not stop_event.is_set():
-                play_audio(samples, sr, blocking=True)
-            bridge.emit_assistant_done()
-            speaking_lock.clear()
-            if wake_active.is_set():
-                bridge.emit_state("IDLE")
-                touch_activity()
-
-        # ── Phase 2: active — check for inactivity timeout ─────────────
-        else:
-            if not was_active:
-                touch_activity()
-                was_active = True
-
-            # Refresh last_activity whenever the pipeline is busy
-            queues_busy = not audio_queue.empty() or not transcript_queue.empty()
-            if queues_busy or speaking_lock.is_set():
-                touch_activity()
-
-            idle_s = _get_idle_seconds()
-            if idle_s >= cfg.active_timeout_s:
-                logger.info(
-                    "No activity for %.0fs — returning to sleep mode.", cfg.active_timeout_s
-                )
-                wake_active.clear()
-                was_active = False
-                bridge.emit_state("SLEEPING")
-            else:
-                time.sleep(0.5)
-
-    logger.info("Wake-word worker stopped.")
 
 
 # ---------------------------------------------------------------------------
@@ -232,12 +136,12 @@ def vad_worker_ui(
     bridge: UIBridge,
 ) -> None:
     """
-    Thread 1 (UI-aware): Records audio and emits amplitude + state signals.
+    Thread 1 (UI-aware): Records audio while Push-to-Talk button is held.
+    Enqueues audio upon button release for STT / LLM / TTS processing.
     """
     logger = logging.getLogger("vad_worker")
-    logger.info("VAD listener started.")
-    initial_state = "IDLE" if (not CONFIG.wake_word.enabled or wake_active.is_set()) else "SLEEPING"
-    bridge.emit_state(initial_state)
+    logger.info("VAD Push-to-Talk listener started.")
+    bridge.emit_state("IDLE")
 
     while not stop_event.is_set():
         if mic_muted.is_set():
@@ -245,51 +149,43 @@ def vad_worker_ui(
             time.sleep(0.1)
             continue
 
-        # ── Wake-word gate ───────────────────────────────────────────────
-        if CONFIG.wake_word.enabled and not wake_active.is_set():
-            # The wake_word_worker owns the mic right now — just wait.
-            time.sleep(0.1)
-            continue
-
-        # Block here while TTS is playing back — poll every 100ms so we
-        # don't spin-lock the CPU.
+        # Block here while TTS is playing back
         if speaking_lock.is_set():
-            logger.debug("VAD paused — assistant is speaking.")
-            bridge.emit_state("IDLE")
+            bridge.emit_state("SPEAKING")
             while speaking_lock.is_set() and not stop_event.is_set():
                 time.sleep(0.1)
-            # Brief extra delay after playback ends so any reverb/echo in the
-            # room can decay before the microphone opens again.
-            time.sleep(0.6)
-            logger.debug("VAD resumed — microphone open.")
+            time.sleep(0.4)
+            bridge.emit_state("IDLE")
+
+        # Wait until user presses & holds the Push-to-Talk button
+        if not ptt_active.is_set():
+            time.sleep(0.05)
+            continue
 
         try:
-            if (CONFIG.wake_word.enabled and not wake_active.is_set()) or mic_muted.is_set():
-                continue
             touch_activity()
             bridge.emit_state("LISTENING")
-            # abort_check will cancel recording immediately if put to sleep, stop requested, TTS starts, or mic muted
+            logger.info("🎙 Recording voice command while button is held...")
+
+            # Record audio continuously until button is released (ptt_active cleared)
             audio = recorder.record(
-                max_duration_s=7.0,
-                abort_check=lambda: stop_event.is_set() or (CONFIG.wake_word.enabled and not wake_active.is_set()) or speaking_lock.is_set() or mic_muted.is_set(),
+                max_duration_s=20.0,
+                abort_check=lambda: stop_event.is_set() or mic_muted.is_set(),
+                stop_check=lambda: not ptt_active.is_set(),
             )
 
-            # Belt-and-suspenders: if put to sleep, muted, or TTS started while record() was winding down, discard audio
-            if (CONFIG.wake_word.enabled and not wake_active.is_set()) or speaking_lock.is_set() or stop_event.is_set() or mic_muted.is_set():
-                logger.debug("Discarding audio captured while sleeping, muted, or TTS playback.")
-                time.sleep(0.1)
-                continue
-
-            if audio is not None and len(audio) > 0:
+            if audio is not None and len(audio) > 0 and not mic_muted.is_set() and not stop_event.is_set():
                 touch_activity()
                 audio_queue.put(audio)
                 bridge.emit_state("PROCESSING")
-                logger.debug("Audio segment enqueued (%d samples).", len(audio))
+                logger.info("Enqueued captured audio segment (%d samples) for STT processing.", len(audio))
             else:
-                time.sleep(0.05)
+                logger.debug("No valid audio captured on button release.")
+                bridge.emit_state("IDLE")
+
         except Exception as exc:
-            logger.error("VAD error: %s", exc)
-            bridge.emit_state("IDLE" if wake_active.is_set() else "SLEEPING")
+            logger.error("VAD Push-to-Talk error: %s", exc)
+            bridge.emit_state("IDLE")
             time.sleep(0.5)
 
     logger.info("VAD listener stopped.")
@@ -318,10 +214,6 @@ def stt_worker_ui(
         except queue.Empty:
             continue
 
-        if CONFIG.wake_word.enabled and not wake_active.is_set():
-            audio_queue.task_done()
-            continue
-
         touch_activity()
         bridge.emit_state("PROCESSING")
         t0 = time.monotonic()
@@ -329,20 +221,13 @@ def stt_worker_ui(
         stt_ms = (time.monotonic() - t0) * 1000
         logger.info("[STT latency: %.0f ms] Transcript: '%s'", stt_ms, text)
 
-        # Check wake status again after transcription completes
-        if CONFIG.wake_word.enabled and not wake_active.is_set():
-            logger.info("STT finished but assistant is sleeping — discarding transcript.")
-            bridge.emit_state("SLEEPING")
-            audio_queue.task_done()
-            continue
-
         if text.strip():
             touch_activity()
             bridge.emit_user_text(text.strip())
             transcript_queue.put((text.strip(), stt_ms))
         else:
             logger.debug("Empty transcript — discarding.")
-            bridge.emit_state("IDLE" if wake_active.is_set() else "SLEEPING")
+            bridge.emit_state("IDLE")
 
         audio_queue.task_done()
 
@@ -374,10 +259,6 @@ def llm_tts_worker_ui(
         except queue.Empty:
             continue
 
-        if CONFIG.wake_word.enabled and not wake_active.is_set():
-            transcript_queue.task_done()
-            continue
-
         # Unpack: stt_ms was added by stt_worker_ui
         if isinstance(item, tuple):
             text, stt_ms = item
@@ -403,15 +284,8 @@ def llm_tts_worker_ui(
                 if tts_item is None:
                     break
                 sentence, t_received = tts_item
-                if CONFIG.wake_word.enabled and not wake_active.is_set():
-                    tts_queue.task_done()
-                    continue
 
-                # Lock BEFORE synthesis so the mic closes the instant we start
-                # generating audio — prevents the 4-6s synthesis window from
-                # letting speaker audio leak back into the microphone.
                 speaking_lock.set()
-                # Flush stale audio/transcripts captured before the lock.
                 _flush_queue(audio_queue)
                 _flush_queue(transcript_queue)
 
@@ -419,7 +293,7 @@ def llm_tts_worker_ui(
                 samples, sr = tts.synthesize(sentence)
                 last_tts_ms = (time.monotonic() - t0) * 1000
                 logger.info("[TTS: %.0f ms] Speaking: '%s'", last_tts_ms, sentence)
-                if len(samples) > 0 and not stop_event.is_set() and (not CONFIG.wake_word.enabled or wake_active.is_set()):
+                if len(samples) > 0 and not stop_event.is_set():
                     play_audio(samples, sr, blocking=True)
                 tts_queue.task_done()
             speaking_lock.clear()            # ← UNLOCK: microphone resumes
@@ -431,7 +305,7 @@ def llm_tts_worker_ui(
         try:
             first_sentence = True
             for sentence in llm.stream_sentences(text, conversation_history):
-                if stop_event.is_set() or (CONFIG.wake_word.enabled and not wake_active.is_set()):
+                if stop_event.is_set():
                     break
 
                 touch_activity()
@@ -454,7 +328,7 @@ def llm_tts_worker_ui(
         pb_thread.join(timeout=30)
 
         bridge.emit_assistant_done()
-        bridge.emit_state("IDLE" if wake_active.is_set() else "SLEEPING")
+        bridge.emit_state("IDLE")
         bridge.emit_amplitude(0.0)
 
         # Emit telemetry
@@ -501,29 +375,21 @@ def main() -> None:
     bridge.emit_state("LOADING")
     app.processEvents()   # force the window to paint before blocking work starts
 
-    # ── Manual wake toggle from the UI button ─────────────────────────
+    # ── Manual wake toggle from the UI button (Push-to-Talk) ─────────────
     def _on_manual_wake_toggle(active: bool) -> None:
-        """Called on the Qt main thread when the user presses Wake Up / Sleep."""
+        """Called on the Qt main thread when the user presses & holds or releases the mic button."""
         logger = logging.getLogger("main")
         if active:
             touch_activity()
-            wake_active.set()
-            _flush_queue(audio_queue)
-            _flush_queue(transcript_queue)
-            bridge.emit_state("IDLE")
-            logger.info("Manual wake: Nyra activated.")
-            window._dock.set_wake_active(True)
-        else:
-            global _manual_sleep_until
-            wake_active.clear()
             stop_playback()
             speaking_lock.clear()
-            _flush_queue(audio_queue)
-            _flush_queue(transcript_queue)
-            _manual_sleep_until = time.monotonic() + 2.0
-            bridge.emit_state("SLEEPING")
-            logger.info("Manual wake: Nyra put to sleep.")
-            window._dock.set_wake_active(False)
+            wake_active.set()
+            ptt_active.set()
+            bridge.emit_state("LISTENING")
+            logger.info("Push-to-Talk: Button pressed — recording started.")
+        else:
+            ptt_active.clear()
+            logger.info("Push-to-Talk: Button released — finalizing recording for processing.")
 
     bridge.wake_toggled.connect(_on_manual_wake_toggle)
 
@@ -609,26 +475,9 @@ def main() -> None:
         if stop_event.is_set():
             return
 
-        # ── Worker threads ────────────────────────────────────────────
-        threads: list[threading.Thread] = []
-
-        if CONFIG.wake_word.enabled:
-            threads.append(threading.Thread(
-                target=wake_word_worker,
-                args=(recorder, transcriber, tts, audio_queue, transcript_queue, stop_event, bridge),
-                name="wake_word_worker",
-                daemon=True,
-            ))
-            logger.info(
-                "Wake-word mode ENABLED — say '%s' to activate.",
-                CONFIG.wake_word.phrases[0],
-            )
-        else:
-            # No wake word: activate immediately
-            wake_active.set()
-            logger.info("Wake-word mode DISABLED — always-on.")
-
-        threads += [
+        # ── Push-to-Talk Worker threads ───────────────────────────────
+        wake_active.set()
+        threads: list[threading.Thread] = [
             threading.Thread(
                 target=vad_worker_ui,
                 args=(recorder, audio_queue, stop_event, speaking_lock, bridge),
@@ -655,6 +504,26 @@ def main() -> None:
 
         threads_holder.extend(threads)
         logger.info("Nyra is ready.")
+
+        # ── Spoken introduction greeting on app startup ─────────────────
+        intro_greeting = (
+            "Hello! I am Nyra, an AI assistant made by the students of Al Irshad Public School "
+            "with the help of Aitute. Press and hold the mic button to speak with me."
+        )
+
+        def play_intro():
+            speaking_lock.set()
+            bridge.emit_state("SPEAKING")
+            bridge.emit_assistant_token(intro_greeting)
+            samples, sr = tts.synthesize(intro_greeting)
+            if len(samples) > 0 and not stop_event.is_set():
+                play_audio(samples, sr, blocking=True)
+            bridge.emit_assistant_done()
+            speaking_lock.clear()
+            bridge.emit_state("IDLE")
+
+        intro_thread = threading.Thread(target=play_intro, name="intro_greeting", daemon=True)
+        intro_thread.start()
 
 
     threads_holder: list[threading.Thread] = []

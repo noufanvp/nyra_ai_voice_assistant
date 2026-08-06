@@ -494,17 +494,34 @@ def mobile_web_app():
     .dock-btn:active { transform: scale(0.94); }
     
     .dock-btn.hero {
-      flex: 1.2;
-      max-width: 76px;
-      height: 52px;
-      background: linear-gradient(135deg, #064E3B, #10B981);
+      flex: 1.4;
+      max-width: 90px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
       color: #FFFFFF;
-      border: 1.5px solid #34D399;
+      border: 1.5px solid #A78BFA;
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.4);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .dock-btn.hero.recording {
+      background: linear-gradient(135deg, #B91C1C, #EF4444) !important;
+      color: #FFFFFF !important;
+      border: 1.5px solid #FCA5A5 !important;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+      animation: pulse-ring 1.2s infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
     .dock-btn.hero.sleeping {
-      background: var(--btn-bg);
-      color: var(--accent);
-      border: 1px solid var(--dock-sep);
+      background: linear-gradient(135deg, #312E81, #4338CA);
+      color: #FFFFFF;
+      border: 1.5px solid #818CF8;
     }
     .dock-btn.muted {
       background: linear-gradient(135deg, #7F1D1D, #DC2626);
@@ -578,11 +595,11 @@ def mobile_web_app():
     <span class="telemetry-tag">● CYBER ONLINE [EN]</span>
   </div>
 
-  <!-- Streaming Chat Log -->
+  <!-- Streaming Chat Display -->
   <div id="chat-display">
     <div class="msg-row assistant">
       <img src="/assets/avatar.png" class="chat-avatar" alt="Nyra">
-      <div class="chat-bubble">Hey! I'm Nyra. Tap AWAKE or hold the mic button to talk with me!</div>
+      <div class="chat-bubble">Hello! I'm Nyra. Tap and hold the center mic button to speak with me!</div>
     </div>
   </div>
 
@@ -590,7 +607,7 @@ def mobile_web_app():
   <div class="dock-area">
     <div class="control-dock">
       
-      <!-- Mute Button -->
+      <!-- 1. Mute Button -->
       <button class="dock-btn" id="btn-mute">
         <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
         <span id="label-mute">MIC ON</span>
@@ -598,15 +615,7 @@ def mobile_web_app():
 
       <div class="dock-sep"></div>
 
-      <!-- Wake / PTT Hero Button -->
-      <button class="dock-btn hero sleeping" id="btn-wake">
-        <svg viewBox="0 0 24 24" id="wake-svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        <span id="label-wake">SLEEPING</span>
-      </button>
-
-      <div class="dock-sep"></div>
-
-      <!-- Settings Button -->
+      <!-- 2. Settings Button -->
       <button class="dock-btn" id="btn-settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>SETTINGS</span>
@@ -614,7 +623,15 @@ def mobile_web_app():
 
       <div class="dock-sep"></div>
 
-      <!-- Clear Chat Button -->
+      <!-- 3. CENTER HERO MIC BUTTON (Tap & Hold to Speak) -->
+      <button class="dock-btn hero sleeping" id="btn-wake">
+        <svg viewBox="0 0 24 24" id="wake-svg"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        <span id="label-wake">HOLD TO SPEAK</span>
+      </button>
+
+      <div class="dock-sep"></div>
+
+      <!-- 4. Clear Chat Button -->
       <button class="dock-btn" id="btn-clear">
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         <span>CLEAR</span>
@@ -622,7 +639,7 @@ def mobile_web_app():
 
       <div class="dock-sep"></div>
 
-      <!-- Theme Toggle Button -->
+      <!-- 5. Theme Toggle Button -->
       <button class="dock-btn" id="btn-theme">
         <svg viewBox="0 0 24 24" id="theme-svg"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <span id="label-theme">LIGHT</span>
@@ -640,10 +657,10 @@ def mobile_web_app():
       </div>
       <div class="info-card">
         <strong>Backend Architecture:</strong><br>
-        • STT: faster-whisper (small, int8)<br>
+        • STT: faster-whisper (tiny.en, int8)<br>
         • LLM: Groq (llama-3.1-8b-instant)<br>
         • TTS: Kokoro-ONNX (af_heart)<br>
-        • Latency: ~1.2s roundtrip
+        • Mode: Tap & Hold Push-to-Talk
       </div>
     </div>
   </div>
@@ -657,6 +674,7 @@ def mobile_web_app():
     let state = 'IDLE';
     let isMuted = false;
     let isAwake = false;
+    let isHolding = false;
     let theme = 'dark';
     let mediaRecorder = null;
     let audioChunks = [];
@@ -749,22 +767,34 @@ def mobile_web_app():
         }
       } else if (data.type === 'response_chunk') {
         setState('SPEAKING');
-        appendMessage(data.text, 'assistant');
+        if (data.text) {
+          appendMessage(data.text, 'assistant');
+        }
         if (data.audio_b64) {
           const audio = new Audio("data:audio/wav;base64," + data.audio_b64);
-          audio.play();
+          audio.play().catch(err => {
+            console.warn("Autoplay notice: click/tap interaction required for audio playback.", err);
+          });
         }
       } else if (data.type === 'done') {
         setState('IDLE');
       } else if (data.type === 'error') {
         setState('IDLE');
         if (data.message) {
-          appendMessage("⚠️ " + data.message + ". Tap AWAKE to try again.", 'assistant');
+          appendMessage("⚠️ " + data.message, 'assistant');
         }
       }
     };
 
     function appendMessage(text, sender) {
+      // Avoid duplicate initial greetings if already present
+      if (sender === 'assistant' && chatDisplay.children.length === 1) {
+        const firstBubble = chatDisplay.querySelector('.chat-bubble');
+        if (firstBubble && firstBubble.textContent.trim() === text.trim()) {
+          return;
+        }
+      }
+
       const row = document.createElement('div');
       row.className = 'msg-row ' + sender;
       
@@ -792,11 +822,10 @@ def mobile_web_app():
       labelMute.innerText = isMuted ? 'MUTED' : 'MIC ON';
     };
 
-    // --- Web Audio Analyser for Live Mic Visualization ---
+    // --- Web Audio Analyser & Tap-and-Hold Recording ---
     let audioCtx = null;
     let analyser = null;
     let micStream = null;
-    let liveMicAmp = 0;
     let maxRecTimeout = null;
 
     async function startRecording() {
@@ -839,19 +868,19 @@ def mobile_web_app():
         mediaRecorder.start(100);
         isAwake = true;
         btnWake.classList.remove('sleeping');
-        btnWake.style.background = 'linear-gradient(135deg, #7F1D1D, #DC2626)';
-        btnWake.style.borderColor = '#FF6B6B';
-        labelWake.innerText = 'LISTENING';
+        btnWake.classList.add('recording');
+        labelWake.innerText = 'LISTENING...';
         setState('LISTENING');
 
-        // Automatically stop recording after 5 seconds max to prevent long hanging recording
+        // Automatically cap max recording at 15 seconds to prevent accidental runaway recording
         if (maxRecTimeout) clearTimeout(maxRecTimeout);
         maxRecTimeout = setTimeout(() => {
-          if (isAwake) {
-            stopRecording();
+          if (isHolding) {
+            handlePressEnd();
           }
-        }, 5000);
+        }, 15000);
       } catch (err) {
+        isHolding = false;
         alert('Microphone permission required! Please allow mic access.');
       }
     }
@@ -865,24 +894,39 @@ def mobile_web_app():
         mediaRecorder.stop();
       }
       isAwake = false;
+      btnWake.classList.remove('recording');
       btnWake.classList.add('sleeping');
-      btnWake.style.background = '';
-      btnWake.style.borderColor = '';
-      labelWake.innerText = 'SLEEPING';
+      labelWake.innerText = 'HOLD TO SPEAK';
       setState('PROCESSING');
     }
 
-    btnWake.onclick = () => {
-      if (!isAwake) {
-        startRecording();
-      } else {
-        stopRecording();
-      }
-    };
+    // Push-to-Talk (Hold and Release) Event Handlers
+    function handlePressStart(e) {
+      if (e) e.preventDefault();
+      if (isMuted || isHolding) return;
+      isHolding = true;
+      startRecording();
+    }
+
+    function handlePressEnd(e) {
+      if (e) e.preventDefault();
+      if (!isHolding) return;
+      isHolding = false;
+      stopRecording();
+    }
+
+    btnWake.addEventListener('pointerdown', handlePressStart);
+    btnWake.addEventListener('pointerup', handlePressEnd);
+    btnWake.addEventListener('pointercancel', handlePressEnd);
+    btnWake.addEventListener('pointerleave', (e) => { if (isHolding) handlePressEnd(e); });
+
+    btnWake.addEventListener('touchstart', handlePressStart, { passive: false });
+    btnWake.addEventListener('touchend', handlePressEnd, { passive: false });
+    btnWake.addEventListener('touchcancel', handlePressEnd, { passive: false });
 
     btnClear.onclick = () => {
       chatDisplay.innerHTML = '';
-      appendMessage("Chat cleared! Tap AWAKE to speak with Nyra.", "assistant");
+      appendMessage("Chat cleared! Tap and hold the mic button to speak with Nyra.", "assistant");
     };
 
     btnTheme.onclick = () => {
@@ -978,6 +1022,29 @@ async def voice_websocket(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("Mobile client connected via WebSocket.")
+
+    # Automatically send introduction greeting speech on link open
+    try:
+        intro_text = "Hello! I am Nyra, an AI assistant made by the students of Al Irshad Public School with the help of Aitute. Tap and hold the mic button to speak with me!"
+        tts = get_tts_engine()
+        audio_b64 = ""
+        sr = 22050
+        if tts:
+            samples, sr = tts.synthesize(intro_text)
+            audio_b64 = audio_to_base64_wav(samples, sr)
+
+        await websocket.send_json({
+            "type": "response_chunk",
+            "text": intro_text,
+            "audio_b64": audio_b64,
+            "sample_rate": sr,
+        })
+        await websocket.send_json({
+            "type": "done",
+            "full_text": intro_text,
+        })
+    except Exception as exc:
+        logger.error("Error sending introduction greeting: %s", exc)
 
     try:
         while True:

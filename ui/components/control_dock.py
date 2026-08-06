@@ -345,7 +345,7 @@ class ControlDock(QFrame):
         # Track separator widgets for theme re-colouring
         self._separators: list = []
 
-        # ── Mute button ────────────────────────────────────────────────
+        # ── 1. Mute button ─────────────────────────────────────────────
         self._btn_mute = _make_btn("btn_mute", "Mute / Unmute microphone  [M]")
         self._btn_mute.setCheckable(True)
         self._btn_mute.clicked.connect(self._on_mute_clicked)
@@ -357,19 +357,7 @@ class ControlDock(QFrame):
         self._separators.append(_sep1)
         layout.addWidget(_sep1)
 
-        # ── Wake button (hero pill) ────────────────────────────────────
-        self._btn_wake = _make_btn("btn_wake", "Wake Up Nyra  [W]", width=80, height=62)
-        self._btn_wake.setCheckable(True)
-        self._btn_wake.clicked.connect(self._on_wake_clicked)
-        self._apply_wake_visual(active=False)
-        layout.addWidget(self._btn_wake)
-
-        # ── Separator ─────────────────────────────────────────────────
-        _sep2 = self._make_separator()
-        self._separators.append(_sep2)
-        layout.addWidget(_sep2)
-
-        # ── Settings button ───────────────────────────────────────────
+        # ── 2. Settings button ────────────────────────────────────────
         self._btn_settings = _make_btn("btn_settings", "Settings & Telemetry  [,]")
         self._btn_settings.setText("SETTINGS")
         self._btn_settings.setCheckable(True)
@@ -395,11 +383,24 @@ class ControlDock(QFrame):
         layout.addWidget(self._btn_settings)
 
         # ── Separator ─────────────────────────────────────────────────
+        _sep2 = self._make_separator()
+        self._separators.append(_sep2)
+        layout.addWidget(_sep2)
+
+        # ── 3. CENTER Hero Mic button (Tap & Hold to Speak) ────────────
+        self._btn_wake = _make_btn("btn_wake", "Press and hold to speak  [W]", width=80, height=62)
+        self._btn_wake.setCheckable(False)
+        self._btn_wake.pressed.connect(self._on_wake_pressed)
+        self._btn_wake.released.connect(self._on_wake_released)
+        self._apply_wake_visual(active=False)
+        layout.addWidget(self._btn_wake)
+
+        # ── Separator ─────────────────────────────────────────────────
         _sep3 = self._make_separator()
         self._separators.append(_sep3)
         layout.addWidget(_sep3)
 
-        # ── Clear button ──────────────────────────────────────────────
+        # ── 4. Clear button ───────────────────────────────────────────
         self._btn_clear = _make_btn("btn_clear", "Clear Chat History  [C]")
         self._btn_clear.setText("CLEAR")
         self._btn_clear.setIcon(_draw_trash_icon("#94A3B8"))
@@ -417,7 +418,7 @@ class ControlDock(QFrame):
         self._btn_clear.clicked.connect(self.clear_chat_requested.emit)
         layout.addWidget(self._btn_clear)
 
-        # ── Theme toggle button ────────────────────────────────────────
+        # ── 5. Theme toggle button ────────────────────────────────────
         sep4 = self._make_separator()
         self._separators.append(sep4)
         layout.addWidget(sep4)
@@ -539,24 +540,23 @@ class ControlDock(QFrame):
             )
 
     def _apply_wake_visual(self, active: bool) -> None:
-        self._btn_wake.setChecked(active)
         if active:
-            self._btn_wake.setText("AWAKE")
+            self._btn_wake.setText("LISTENING...")
             self._btn_wake.setIcon(_draw_wake_icon(active=True))
-            self._btn_wake.setToolTip("Put Nyra to sleep  [W]")
+            self._btn_wake.setToolTip("Release to send voice command")
             self._btn_wake.setStyleSheet(
                 _BTN_ACTIVE.format(
                     name="btn_wake",
-                    grad_start="#064E3B",
-                    grad_end="#10B981",
-                    border_color="#34D399",
+                    grad_start="#7F1D1D",
+                    grad_end="#DC2626",
+                    border_color="#FF6B6B",
                 ) +
-                "QToolButton#btn_wake:hover { border-color: #6EE7B7; }"
+                "QToolButton#btn_wake:hover { border-color: #FCA5A5; }"
             )
         else:
-            self._btn_wake.setText("SLEEPING")
+            self._btn_wake.setText("HOLD TO SPEAK")
             self._btn_wake.setIcon(_draw_wake_icon(active=False))
-            self._btn_wake.setToolTip("Wake Up Nyra  [W]")
+            self._btn_wake.setToolTip("Press and hold to speak  [W]")
             self._btn_wake.setStyleSheet(
                 _btn_base(name="btn_wake", hover_color="#6366F1")
             )
@@ -590,9 +590,13 @@ class ControlDock(QFrame):
         self._update_mute_visual(checked)
         self.mute_toggled.emit(checked)
 
-    def _on_wake_clicked(self, checked: bool) -> None:
-        self._apply_wake_visual(checked)
-        self.wake_toggled.emit(checked)
+    def _on_wake_pressed(self) -> None:
+        self._apply_wake_visual(active=True)
+        self.wake_toggled.emit(True)
+
+    def _on_wake_released(self) -> None:
+        self._apply_wake_visual(active=False)
+        self.wake_toggled.emit(False)
 
     def _on_settings_clicked(self, checked: bool) -> None:
         self.settings_toggled.emit(checked)

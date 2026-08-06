@@ -65,8 +65,9 @@ class AudioConfig:
 class STTConfig:
     """Parameters for faster-whisper local STT."""
 
-    # model_size: "tiny.en", "tiny", "base", "small", "medium"
-    # "tiny.en" uses only ~75MB RAM, ideal for Render free tier (512MB limit)
+    # model_size: "tiny.en", "base.en", "small.en", "medium"
+    # Defaults to "tiny.en" for low-memory environments (Render free tier 512MB limit).
+    # Override via environment variable STT_MODEL_SIZE="base.en" for higher local accuracy.
     model_size: str = field(default_factory=lambda: os.getenv("STT_MODEL_SIZE", "tiny.en"))
 
     # Inference device: "cpu" or "cuda"
@@ -75,8 +76,8 @@ class STTConfig:
     # Quantization: "int8", "float16", "float32"
     compute_type: str = "int8"
 
-    # beam size (1 for fastest low-memory CPU inference)
-    beam_size: int = 1
+    # beam size (3 for accurate decoding without speed penalty)
+    beam_size: int = 3
 
     # Language hint ("en" for English-only model)
     language: str | None = "en"
@@ -183,8 +184,8 @@ class WakeWordConfig:
     # The assistant's public name (used in greeting + UI title)
     assistant_name: str = "Nyra"
 
-    # Enable wake-word gating (False = always-on, True = wait for wake word)
-    enabled: bool = True
+    # Enable wake-word gating (False = Push-to-Talk direct mode, True = wait for wake word)
+    enabled: bool = False
 
     # Accepted wake-word phrases (case-insensitive substring match).
     # Whisper often mishears slight variations, so we list common alternatives

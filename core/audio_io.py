@@ -184,6 +184,7 @@ class VADRecorder:
         self,
         max_duration_s: Optional[float] = None,
         abort_check: Optional[Callable[[], bool]] = None,
+        stop_check: Optional[Callable[[], bool]] = None,
     ) -> np.ndarray:
         """
         Block until a complete speech segment (followed by silence) is captured.
@@ -198,7 +199,9 @@ class VADRecorder:
             Maximum recording duration in seconds before forcing recording to end.
             If None, uses self.cfg.max_recording_duration_s.
         abort_check : Callable[[], bool], optional
-            Optional callback returning True to abort recording immediately.
+            Optional callback returning True to abort recording immediately (discards audio).
+        stop_check : Callable[[], bool], optional
+            Optional callback returning True to stop recording immediately and return recorded audio.
 
         Returns
         -------
@@ -251,10 +254,13 @@ class VADRecorder:
                     if abort_check is not None and abort_check():
                         logger.debug("record() aborted — abort_check condition met.")
                         return np.array([], dtype=np.float32)
+                    if stop_check is not None and stop_check():
+                        logger.debug("record() stopped — stop_check condition met.")
+                        break
 
-                    # Safety timeouts
+                    # Safety timeouts (only enforce silence timeouts when NOT in Push-to-Talk mode)
                     elapsed = time.monotonic() - recording_start
-                    if not speech_detected and elapsed >= self.cfg.initial_silence_timeout_s:
+                    if stop_check is None and not speech_detected and elapsed >= self.cfg.initial_silence_timeout_s:
                         logger.debug(
                             "No speech detected within initial timeout (%.1fs). Returning.",
                             elapsed,
@@ -302,7 +308,8 @@ class VADRecorder:
                             if silence_start is None:
                                 silence_start = now
                             silence_duration = now - silence_start
-                            if silence_duration >= self.cfg.silence_duration_s:
+                            # Only stop on silence in wake-word mode, NOT in Push-to-Talk mode
+                            if stop_check is None and silence_duration >= self.cfg.silence_duration_s:
                                 logger.debug(
                                     "Silence for %.2fs — stopping.", silence_duration
                                 )
@@ -317,13 +324,13 @@ class VADRecorder:
 
         full_audio = np.concatenate(frames)
 
-        # Guard: require minimum speech duration
+        # Guard: require minimum speech duration (only in wake-word mode)
         if speech_start is not None:
             speech_duration = time.monotonic() - speech_start
         else:
             speech_duration = 0.0
 
-        if not speech_detected or speech_duration < self.cfg.min_speech_duration_s:
+        if stop_check is None and (not speech_detected or speech_duration < self.cfg.min_speech_duration_s):
             logger.debug(
                 "No meaningful speech detected (%.2fs). Ignoring.", speech_duration
             )

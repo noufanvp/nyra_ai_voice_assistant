@@ -85,6 +85,15 @@ class TestServerEndpoints(unittest.TestCase):
         mock_tts.synthesize.return_value = (np.zeros(8000, dtype=np.float32), 16000)
 
         with self.client.websocket_connect("/ws/voice") as websocket:
+            # 1. On connection accept, server sends intro greeting
+            intro_chunk = websocket.receive_json()
+            self.assertEqual(intro_chunk.get("type"), "response_chunk")
+            self.assertIn("Nyra", intro_chunk.get("text", ""))
+
+            intro_done = websocket.receive_json()
+            self.assertEqual(intro_done.get("type"), "done")
+
+            # 2. Client sends user query
             websocket.send_json({"type": "text", "text": "Hello"})
 
             chunk = websocket.receive_json()
