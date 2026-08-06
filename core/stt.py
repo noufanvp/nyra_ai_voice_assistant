@@ -166,7 +166,7 @@ class WhisperTranscriber:
                 language=self.cfg.language or "en",
                 temperature=0.0,
                 vad_filter=False,
-                no_speech_threshold=0.6,
+                no_speech_threshold=0.85,
                 compression_ratio_threshold=2.4,
                 condition_on_previous_text=False,
                 initial_prompt=(
@@ -179,7 +179,7 @@ class WhisperTranscriber:
             filtered_segments = [
                 seg.text.strip()
                 for seg in segments
-                if seg.no_speech_prob < 0.6 and seg.text.strip()
+                if seg.no_speech_prob < 0.85 and seg.text.strip()
             ]
             text = " ".join(filtered_segments).strip()
 

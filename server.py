@@ -743,8 +743,10 @@ def mobile_web_app():
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'transcript') {
-        appendMessage(data.text, 'user');
-        setState('PROCESSING');
+        if (data.text) {
+          appendMessage(data.text, 'user');
+          setState('PROCESSING');
+        }
       } else if (data.type === 'response_chunk') {
         setState('SPEAKING');
         appendMessage(data.text, 'assistant');
@@ -754,6 +756,11 @@ def mobile_web_app():
         }
       } else if (data.type === 'done') {
         setState('IDLE');
+      } else if (data.type === 'error') {
+        setState('IDLE');
+        if (data.message) {
+          appendMessage("⚠️ " + data.message + ". Tap AWAKE to try again.", 'assistant');
+        }
       }
     };
 
