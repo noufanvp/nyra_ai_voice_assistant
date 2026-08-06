@@ -797,6 +797,7 @@ def mobile_web_app():
     let analyser = null;
     let micStream = null;
     let liveMicAmp = 0;
+    let maxRecTimeout = null;
 
     async function startRecording() {
       if (isMuted) return;
@@ -842,12 +843,24 @@ def mobile_web_app():
         btnWake.style.borderColor = '#FF6B6B';
         labelWake.innerText = 'LISTENING';
         setState('LISTENING');
+
+        // Automatically stop recording after 5 seconds max to prevent long hanging recording
+        if (maxRecTimeout) clearTimeout(maxRecTimeout);
+        maxRecTimeout = setTimeout(() => {
+          if (isAwake) {
+            stopRecording();
+          }
+        }, 5000);
       } catch (err) {
         alert('Microphone permission required! Please allow mic access.');
       }
     }
 
     function stopRecording() {
+      if (maxRecTimeout) {
+        clearTimeout(maxRecTimeout);
+        maxRecTimeout = null;
+      }
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
       }

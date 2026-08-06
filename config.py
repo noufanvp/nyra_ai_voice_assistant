@@ -39,19 +39,19 @@ class AudioConfig:
     vad_threshold: float = 0.5
 
     # How long silence must persist after speaking before recording stops (seconds).
-    # 0.7s provides quick, snappy response turnaround after a sentence ends.
-    silence_duration_s: float = 0.7
+    # 0.5s provides quick, snappy response turnaround after a sentence ends.
+    silence_duration_s: float = 0.5
 
     # Maximum time to wait for speech to begin before timing out (seconds).
     # If no speech starts within this window, recording stops immediately.
-    initial_silence_timeout_s: float = 2.5
+    initial_silence_timeout_s: float = 2.0
 
     # Minimum speech duration before we treat audio as real input (seconds).
-    # 0.4s filters out noise bursts and brief accidental sounds.
+    # 0.25s filters out noise bursts and brief accidental sounds.
     min_speech_duration_s: float = 0.25
 
     # Maximum recording duration safety cap (seconds)
-    max_recording_duration_s: float = 30.0
+    max_recording_duration_s: float = 6.0
 
     # sounddevice dtype
     dtype: str = "float32"
