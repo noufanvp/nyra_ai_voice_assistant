@@ -238,7 +238,7 @@ def favicon():
 # ---------------------------------------------------------------------------
 # Mobile Web App Endpoint (Matches PySide6 Desktop UI/UX)
 # ---------------------------------------------------------------------------
-@app.get("/app")
+@app.api_route("/app", methods=["GET", "HEAD"])
 def mobile_web_app():
     """Serves a modern mobile web app with exact UI/UX matching PySide6 desktop app."""
     html_content = r"""<!DOCTYPE html>
@@ -901,19 +901,16 @@ class ChatResponse(BaseModel):
     sample_rate: int
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def health_check():
-    """Health check and engine status endpoint."""
-    stt = get_stt_engine()
-    tts = get_tts_engine()
-    llm = get_llm_engine()
+    """Health check and engine status endpoint for Render load balancers."""
     return {
         "status": "online",
         "assistant": CONFIG.wake_word.assistant_name,
         "engines": {
-            "stt": stt.cfg.model_size if stt else "disabled",
-            "tts": tts.backend_name if tts else "disabled",
-            "llm": llm.cfg.model if llm else "disabled",
+            "stt": _stt_engine.cfg.model_size if _stt_engine else "ready",
+            "tts": _tts_engine.backend_name if _tts_engine else "ready",
+            "llm": _llm_engine.cfg.model if _llm_engine else "ready",
         },
         "mobile_web_app": "/app",
     }
