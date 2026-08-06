@@ -144,13 +144,57 @@ class _Pyttsx3Backend:
 
 
 # ---------------------------------------------------------------------------
+# gTTS cloud fallback backend (0 MB RAM model footprint for Render free tier)
+# ---------------------------------------------------------------------------
+
+class _GTTSBackend:
+    """gTTS online backend (0 MB RAM model footprint, ideal for Render 512MB limit)."""
+
+    def __init__(self):
+        from gtts import gTTS
+        logger.info("gTTS online backend initialized (0 MB RAM model footprint).")
+
+    def synthesize(self, text: str) -> tuple[np.ndarray, int]:
+        import os
+        import tempfile
+        import av
+        from gtts import gTTS
+
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            tts = gTTS(text=text, lang="en")
+            tts.save(tmp_path)
+
+            container = av.open(tmp_path)
+            resampler = av.AudioResampler(format="flt", layout="mono", rate=22050)
+            samples_list = []
+            for frame in container.decode(audio=0):
+                for rframe in resampler.resample(frame):
+                    samples_list.append(rframe.to_ndarray())
+            container.close()
+
+            if samples_list:
+                audio = np.concatenate(samples_list, axis=1).squeeze()
+            else:
+                audio = np.array([], dtype=np.float32)
+            return audio, 22050
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+# ---------------------------------------------------------------------------
 # Public TTS Engine
 # ---------------------------------------------------------------------------
 
 class LocalTTSEngine:
     """
-    Unified local TTS engine. Uses kokoro-onnx by default for English
-    and falls back to pyttsx3.
+    Unified local TTS engine. Uses kokoro-onnx by default for local desktop,
+    gTTS for Render cloud free tier (0 MB RAM), and falls back to pyttsx3.
 
     Parameters
     ----------
@@ -165,13 +209,32 @@ class LocalTTSEngine:
         self._init_backend()
 
     def _init_backend(self) -> None:
-        # Try kokoro-onnx first for English
+        import os
+
+        # On Render or when USE_GTTS=true, use gTTS to fit within 512MB RAM cap
+        use_gtts = os.getenv("USE_GTTS", "").lower() in ("true", "1") or os.getenv("RENDER") is not None
+        if use_gtts:
+            try:
+                self._backend = _GTTSBackend()
+                self._backend_name = "gtts"
+                return
+            except Exception as exc:
+                logger.warning("gTTS backend init failed (%s), trying Kokoro-ONNX...", exc)
+
+        # Try kokoro-onnx first for local desktop
         try:
             self._backend = _KokoroBackend(self.cfg)
             self._backend_name = "kokoro-onnx"
             return
         except Exception as exc:
-            logger.warning("Kokoro-ONNX unavailable (%s). Trying pyttsx3 fallback…", exc)
+            logger.warning("Kokoro-ONNX unavailable (%s). Trying gTTS fallback…", exc)
+
+        try:
+            self._backend = _GTTSBackend()
+            self._backend_name = "gtts"
+            return
+        except Exception as exc:
+            logger.warning("gTTS fallback failed (%s). Trying pyttsx3 fallback...", exc)
 
         # Fallback to pyttsx3
         try:
