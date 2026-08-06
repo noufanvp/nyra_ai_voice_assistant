@@ -754,6 +754,56 @@ def mobile_web_app():
       }
     }
 
+    // --- Audio Queue Management for Sequential Playback ---
+    let audioQueue = [];
+    let isPlayingAudio = false;
+    let currentAudioElement = null;
+
+    function stopAllAudio() {
+      audioQueue = [];
+      if (currentAudioElement) {
+        currentAudioElement.pause();
+        currentAudioElement.currentTime = 0;
+        currentAudioElement = null;
+      }
+      isPlayingAudio = false;
+    }
+
+    function playNextAudioInQueue() {
+      if (isPlayingAudio || audioQueue.length === 0) {
+        return;
+      }
+
+      isPlayingAudio = true;
+      const b64Audio = audioQueue.shift();
+      const audio = new Audio("data:audio/wav;base64," + b64Audio);
+      currentAudioElement = audio;
+
+      audio.onended = () => {
+        currentAudioElement = null;
+        isPlayingAudio = false;
+        playNextAudioInQueue();
+      };
+
+      audio.onerror = () => {
+        currentAudioElement = null;
+        isPlayingAudio = false;
+        playNextAudioInQueue();
+      };
+
+      audio.play().catch(err => {
+        console.warn("Autoplay notice: click/tap interaction required for audio playback.", err);
+        currentAudioElement = null;
+        isPlayingAudio = false;
+        playNextAudioInQueue();
+      });
+    }
+
+    function enqueueAudio(b64Audio) {
+      audioQueue.push(b64Audio);
+      playNextAudioInQueue();
+    }
+
     // --- WebSocket Messaging ---
     let currentAssistantBubble = null;
 
@@ -761,6 +811,7 @@ def mobile_web_app():
       const data = JSON.parse(event.data);
       if (data.type === 'transcript') {
         currentAssistantBubble = null;
+        stopAllAudio();
         if (data.text) {
           appendMessage(data.text, 'user');
           setState('PROCESSING');
@@ -771,16 +822,16 @@ def mobile_web_app():
           appendAssistantChunk(data.text);
         }
         if (data.audio_b64) {
-          const audio = new Audio("data:audio/wav;base64," + data.audio_b64);
-          audio.play().catch(err => {
-            console.warn("Autoplay notice: click/tap interaction required for audio playback.", err);
-          });
+          enqueueAudio(data.audio_b64);
         }
       } else if (data.type === 'done') {
         currentAssistantBubble = null;
-        setState('IDLE');
+        if (!isPlayingAudio && audioQueue.length === 0) {
+          setState('IDLE');
+        }
       } else if (data.type === 'error') {
         currentAssistantBubble = null;
+        stopAllAudio();
         setState('IDLE');
         if (data.message) {
           appendMessage("⚠️ " + data.message, 'assistant');
@@ -847,6 +898,7 @@ def mobile_web_app():
     let maxRecTimeout = null;
 
     async function startRecording() {
+      stopAllAudio();
       if (isMuted) return;
       try {
         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
