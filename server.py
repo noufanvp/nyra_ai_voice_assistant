@@ -238,6 +238,7 @@ def favicon():
 # ---------------------------------------------------------------------------
 # Mobile Web App Endpoint (Matches PySide6 Desktop UI/UX)
 # ---------------------------------------------------------------------------
+@app.api_route("/", methods=["GET", "HEAD"])
 @app.api_route("/app", methods=["GET", "HEAD"])
 def mobile_web_app():
     """Serves a modern mobile web app with exact UI/UX matching PySide6 desktop app."""
@@ -901,7 +902,7 @@ class ChatResponse(BaseModel):
     sample_rate: int
 
 
-@app.api_route("/", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     """Health check and engine status endpoint for Render load balancers."""
     return {

@@ -34,8 +34,8 @@ class TestServerEndpoints(unittest.TestCase):
         self.client = TestClient(app)
 
     def test_health_check(self):
-        """GET / should return 200 and online status."""
-        response = self.client.get("/")
+        """GET /health should return 200 and online status."""
+        response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data.get("status"), "online")
