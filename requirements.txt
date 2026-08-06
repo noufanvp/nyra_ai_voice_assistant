@@ -28,8 +28,9 @@ webrtcvad>=2.0.10
 # --- TTS: Kokoro ONNX (primary) ---
 kokoro-onnx>=0.4.0
 
-# --- TTS: Fallback ---
+# --- TTS: Fallback & Cloud (0 MB RAM) ---
 pyttsx3>=2.90
+gtts>=2.5.0
 
 # --- Config / Env ---
 python-dotenv>=1.0.0
