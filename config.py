@@ -76,8 +76,8 @@ class STTConfig:
     # Quantization: "int8", "float16", "float32"
     compute_type: str = "int8"
 
-    # beam size (3 for accurate decoding without speed penalty)
-    beam_size: int = 3
+    # beam size (1 for maximum speed and sub-400ms CPU response time)
+    beam_size: int = 1
 
     # Language hint ("en" for English-only model)
     language: str | None = "en"
@@ -86,7 +86,7 @@ class STTConfig:
     allowed_languages: list = field(default_factory=lambda: ["en"])
 
     # Number of CPU threads for CTranslate2
-    cpu_threads: int = 2
+    cpu_threads: int = 4
 
 
 # ---------------------------------------------------------------------------
