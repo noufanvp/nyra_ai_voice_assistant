@@ -854,6 +854,11 @@ def mobile_web_app():
         if (data.audio_b64) {
           enqueueAudio(data.audio_b64);
         }
+      } else if (data.type === 'audio_chunk') {
+        setState('SPEAKING');
+        if (data.audio_b64) {
+          enqueueAudio(data.audio_b64);
+        }
       } else if (data.type === 'done') {
         currentAssistantBubble = null;
         if (!isPlayingAudio && audioQueue.length === 0) {
@@ -1197,20 +1202,27 @@ async def voice_websocket(websocket: WebSocket):
                 full_reply = ""
                 for sentence in llm.stream_sentences(user_query):
                     full_reply += sentence + " "
-                    
-                    # Generate TTS for each sentence for snappy audio streaming
-                    audio_b64 = ""
-                    sr = 22050
-                    if tts:
-                        samples, sr = tts.synthesize(sentence)
-                        audio_b64 = audio_to_base64_wav(samples, sr)
 
+                    # 1. Send text response chunk instantly so client UI updates in <150ms
                     await websocket.send_json({
                         "type": "response_chunk",
                         "text": sentence,
-                        "audio_b64": audio_b64,
-                        "sample_rate": sr,
+                        "audio_b64": "",
                     })
+
+                    # 2. Synthesize TTS audio asynchronously without blocking text delivery
+                    if tts:
+                        try:
+                            samples, sr = await asyncio.to_thread(tts.synthesize, sentence)
+                            if samples is not None and len(samples) > 0:
+                                audio_b64 = audio_to_base64_wav(samples, sr)
+                                await websocket.send_json({
+                                    "type": "audio_chunk",
+                                    "audio_b64": audio_b64,
+                                    "sample_rate": sr,
+                                })
+                        except Exception as tts_err:
+                            logger.warning("TTS streaming error: %s", tts_err)
 
                 await websocket.send_json({
                     "type": "done",
