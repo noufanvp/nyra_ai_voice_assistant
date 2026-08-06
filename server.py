@@ -58,26 +58,44 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Global Engine Initialization
+# Lazy-Loaded Global AI Engines (Prevents startup memory spikes & instant port binding)
 # ---------------------------------------------------------------------------
-logger.info("Initializing Nyra Backend AI Engines...")
-try:
-    stt_engine = WhisperTranscriber(CONFIG.stt)
-except Exception as exc:
-    logger.error("Failed to load STT engine: %s", exc)
-    stt_engine = None
+_stt_engine = None
+_tts_engine = None
+_llm_engine = None
 
-try:
-    tts_engine = LocalTTSEngine(CONFIG.tts)
-except Exception as exc:
-    logger.error("Failed to load TTS engine: %s", exc)
-    tts_engine = None
+def get_stt_engine():
+    global _stt_engine
+    if _stt_engine is None:
+        try:
+            logger.info("Lazy-loading STT Engine (Whisper)...")
+            import gc
+            _stt_engine = WhisperTranscriber(CONFIG.stt)
+            gc.collect()
+        except Exception as exc:
+            logger.error("Failed to load STT engine: %s", exc)
+    return _stt_engine
 
-try:
-    llm_engine = GroqClientWrapper(CONFIG.llm)
-except Exception as exc:
-    logger.error("Failed to load LLM engine: %s", exc)
-    llm_engine = None
+def get_tts_engine():
+    global _tts_engine
+    if _tts_engine is None:
+        try:
+            logger.info("Lazy-loading TTS Engine (Kokoro)...")
+            import gc
+            _tts_engine = LocalTTSEngine(CONFIG.tts)
+            gc.collect()
+        except Exception as exc:
+            logger.error("Failed to load TTS engine: %s", exc)
+    return _tts_engine
+
+def get_llm_engine():
+    global _llm_engine
+    if _llm_engine is None:
+        try:
+            _llm_engine = GroqClientWrapper(CONFIG.llm)
+        except Exception as exc:
+            logger.error("Failed to load LLM engine: %s", exc)
+    return _llm_engine
 
 
 # ---------------------------------------------------------------------------
@@ -886,13 +904,16 @@ class ChatResponse(BaseModel):
 @app.get("/")
 def health_check():
     """Health check and engine status endpoint."""
+    stt = get_stt_engine()
+    tts = get_tts_engine()
+    llm = get_llm_engine()
     return {
         "status": "online",
         "assistant": CONFIG.wake_word.assistant_name,
         "engines": {
-            "stt": stt_engine.cfg.model_size if stt_engine else "disabled",
-            "tts": tts_engine.backend_name if tts_engine else "disabled",
-            "llm": llm_engine.cfg.model if llm_engine else "disabled",
+            "stt": stt.cfg.model_size if stt else "disabled",
+            "tts": tts.backend_name if tts else "disabled",
+            "llm": llm.cfg.model if llm else "disabled",
         },
         "mobile_web_app": "/app",
     }
@@ -901,17 +922,19 @@ def health_check():
 @app.post("/api/chat", response_model=ChatResponse)
 def text_chat(req: ChatRequest):
     """Processes a text query and returns assistant text and synthesized speech audio."""
-    if not llm_engine:
+    llm = get_llm_engine()
+    tts = get_tts_engine()
+    if not llm:
         raise HTTPException(status_code=503, detail="LLM Engine not available")
 
     full_text = ""
-    for sentence in llm_engine.stream_sentences(req.message):
+    for sentence in llm.stream_sentences(req.message):
         full_text += sentence + " "
     full_text = full_text.strip()
 
     audio_samples, sample_rate = np.array([], dtype=np.float32), 22050
-    if tts_engine and full_text:
-        audio_samples, sample_rate = tts_engine.synthesize(full_text)
+    if tts and full_text:
+        audio_samples, sample_rate = tts.synthesize(full_text)
 
     audio_b64 = audio_to_base64_wav(audio_samples, sample_rate)
 
@@ -949,10 +972,11 @@ async def voice_websocket(websocket: WebSocket):
                 user_query = data.get("text", "")
             elif msg_type == "audio":
                 b64_audio = data.get("audio_b64", "")
-                if b64_audio and stt_engine:
+                stt = get_stt_engine()
+                if b64_audio and stt:
                     try:
                         pcm, sr = base64_wav_to_numpy(b64_audio)
-                        user_query = stt_engine.transcribe(pcm, sample_rate=sr)
+                        user_query = stt.transcribe(pcm, sample_rate=sr)
                         await websocket.send_json({
                             "type": "transcript",
                             "text": user_query,
@@ -973,16 +997,18 @@ async def voice_websocket(websocket: WebSocket):
                 continue
 
             # Stream LLM responses and TTS chunks
-            if llm_engine:
+            llm = get_llm_engine()
+            tts = get_tts_engine()
+            if llm:
                 full_reply = ""
-                for sentence in llm_engine.stream_sentences(user_query):
+                for sentence in llm.stream_sentences(user_query):
                     full_reply += sentence + " "
                     
                     # Generate TTS for each sentence for snappy audio streaming
                     audio_b64 = ""
                     sr = 22050
-                    if tts_engine:
-                        samples, sr = tts_engine.synthesize(sentence)
+                    if tts:
+                        samples, sr = tts.synthesize(sentence)
                         audio_b64 = audio_to_base64_wav(samples, sr)
 
                     await websocket.send_json({
