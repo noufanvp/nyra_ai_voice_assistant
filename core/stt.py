@@ -20,6 +20,7 @@ import numpy as np
 
 import re
 
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
