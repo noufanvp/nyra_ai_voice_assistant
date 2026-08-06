@@ -123,10 +123,19 @@ def audio_to_base64_wav(pcm_float32: np.ndarray, sample_rate: int) -> str:
 def base64_wav_to_numpy(b64_str: str) -> tuple[np.ndarray, int]:
     """
     Convert Base64 encoded audio (WAV, WebM, Opus, MP4, AAC, OGG) to float32 numpy array & sample rate.
-    Uses Python's wave module for standard WAV, and PyAV as a robust fallback for mobile containers.
+    Uses wave module, soundfile, and temporary file PyAV as robust fallbacks for mobile browsers.
     """
-    raw_bytes = base64.b64decode(b64_str)
-    if not raw_bytes:
+    if not b64_str:
+        return np.array([], dtype=np.float32), 16000
+
+    try:
+        raw_bytes = base64.b64decode(b64_str)
+    except Exception as err:
+        logger.warning("Base64 decode error: %s", err)
+        return np.array([], dtype=np.float32), 16000
+
+    if not raw_bytes or len(raw_bytes) < 300:
+        logger.debug("Audio payload too short (%d bytes), skipping.", len(raw_bytes) if raw_bytes else 0)
         return np.array([], dtype=np.float32), 16000
 
     # 1. Try standard WAV parser first
@@ -141,11 +150,26 @@ def base64_wav_to_numpy(b64_str: str) -> tuple[np.ndarray, int]:
     except Exception:
         pass
 
-    # 2. PyAV fallback for WebM/Opus, MP4/AAC, OGG from mobile browsers
+    # 2. Try soundfile parser
     try:
+        import soundfile as sf
         buf.seek(0)
+        data, sr = sf.read(buf, dtype="float32")
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return data, sr
+    except Exception:
+        pass
+
+    # 3. Temporary file PyAV fallback for WebM/Opus, MP4/AAC, OGG from mobile browsers
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
+        tmp.write(raw_bytes)
+        tmp_path = tmp.name
+
+    try:
         import av
-        container = av.open(buf)
+        container = av.open(tmp_path)
         resampler = av.AudioResampler(format="flt", layout="mono", rate=16000)
         samples = []
         for frame in container.decode(audio=0):
@@ -153,11 +177,17 @@ def base64_wav_to_numpy(b64_str: str) -> tuple[np.ndarray, int]:
             if resample_out:
                 for rf in resample_out:
                     samples.append(rf.to_ndarray())
+        container.close()
         if samples:
             audio_data = np.concatenate(samples, axis=1).squeeze(0)
             return audio_data.astype(np.float32), 16000
     except Exception as exc:
-        logger.error("PyAV Audio decoding error: %s", exc)
+        logger.warning("Audio decoding notice (%d bytes): %s", len(raw_bytes), exc)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
 
     return np.array([], dtype=np.float32), 16000
 
@@ -920,14 +950,23 @@ def mobile_web_app():
         mediaRecorder = new MediaRecorder(micStream, { mimeType: mimeType });
         audioChunks = [];
         
+        let recStartTime = Date.now();
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => {
+          const duration = Date.now() - recStartTime;
+          if (duration < 300) {
+            console.log("Tap too short (" + duration + "ms), skipping audio send.");
+            if (micStream) micStream.getTracks().forEach(t => t.stop());
+            if (audioCtx && audioCtx.state !== 'closed') audioCtx.close();
+            return;
+          }
+
           const blob = new Blob(audioChunks, { type: mimeType });
           const reader = new FileReader();
           reader.readAsDataURL(blob);
           reader.onloadend = () => {
             const b64 = reader.result.split(',')[1];
-            if (ws && ws.readyState === WebSocket.OPEN) {
+            if (b64 && b64.length > 200 && ws && ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: 'audio', audio_b64: b64 }));
             }
           };
