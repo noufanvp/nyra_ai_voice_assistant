@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: nyra-voice-assistant
+    env: docker
+    plan: free
+    region: singapore
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PORT
+        value: 8000

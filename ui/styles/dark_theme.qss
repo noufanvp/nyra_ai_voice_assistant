@@ -1,0 +1,284 @@
+/*
+ * dark_theme.qss — Cyber-Luxe Obsidian QSS Stylesheet for AURA AI Voice Assistant.
+ *
+ * Palette:
+ *   Background      #090A0F (deep midnight)
+ *   Surface Glass   rgba(20, 23, 34, 0.85)
+ *   Surface Alt     #1E2235
+ *   Accent Indigo   #6366F1
+ *   Accent Cyan     #06B6D4
+ *   Accent Purple   #A855F7
+ *   Text Primary    #F8FAFC
+ *   Text Muted      #94A3B8
+ */
+
+/* ── Root Window & Dialogs ───────────────────────────────────────────── */
+
+QMainWindow, QDialog {
+    background-color: #090A0F;
+    color: #F8FAFC;
+}
+
+QWidget {
+    background-color: transparent;
+    color: #F8FAFC;
+    font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+}
+
+/* ── Scroll Areas & Scrollbars ───────────────────────────────────────── */
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+QScrollBar:vertical {
+    background-color: rgba(15, 17, 26, 0.6);
+    width: 6px;
+    margin: 4px 2px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #374151, stop:1 #4B5563);
+    border-radius: 3px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6366F1, stop:1 #A855F7);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: rgba(15, 17, 26, 0.6);
+    height: 6px;
+    margin: 2px 4px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #374151;
+    border-radius: 3px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #6366F1;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ── Standard Buttons ────────────────────────────────────────────────── */
+
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6366F1, stop:1 #4F46E5);
+    color: #FFFFFF;
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    border-radius: 10px;
+    padding: 9px 20px;
+    font-weight: 600;
+    font-size: 13px;
+    outline: none;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #818CF8, stop:1 #6366F1);
+    border-color: rgba(168, 85, 247, 0.6);
+}
+
+QPushButton:pressed {
+    background-color: #3730A3;
+}
+
+QPushButton:disabled {
+    background-color: #1F2937;
+    color: #4B5563;
+    border-color: transparent;
+}
+
+QPushButton:checked {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #4F46E5, stop:1 #7C3AED);
+    border: 1px solid #A855F7;
+}
+
+/* ── Custom Dock Action Buttons ────────────────────────────────────── */
+
+QPushButton#btn_mute {
+    background-color: rgba(20, 23, 34, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 0px;
+    font-size: 20px;
+}
+
+QPushButton#btn_mute:hover {
+    background-color: rgba(30, 34, 52, 0.95);
+    border-color: rgba(99, 102, 241, 0.6);
+}
+
+QPushButton#btn_mute:checked {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #991B1B, stop:1 #DC2626);
+    border-color: #EF4444;
+    color: #FEE2E2;
+}
+
+QPushButton#btn_settings {
+    background-color: rgba(20, 23, 34, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    padding: 0px;
+    font-size: 18px;
+}
+
+QPushButton#btn_settings:hover {
+    background-color: rgba(30, 34, 52, 0.95);
+    border-color: rgba(6, 182, 212, 0.6);
+}
+
+QPushButton#btn_settings:checked {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1E1B4B, stop:1 #312E81);
+    border-color: #818CF8;
+}
+
+QPushButton#btn_clear {
+    background-color: rgba(20, 23, 34, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    padding: 0px;
+    font-size: 16px;
+}
+
+QPushButton#btn_clear:hover {
+    background-color: rgba(30, 34, 52, 0.95);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+
+/* ── ComboBox ───────────────────────────────────────────────────────── */
+
+QComboBox {
+    background-color: #141722;
+    color: #F8FAFC;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+}
+
+QComboBox:hover {
+    border-color: #6366F1;
+}
+
+QComboBox:focus {
+    border-color: #06B6D4;
+    outline: none;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 28px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #94A3B8;
+    margin-right: 8px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #141722;
+    color: #F8FAFC;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    selection-background-color: #312E81;
+    outline: none;
+    padding: 4px;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 7px 12px;
+    border-radius: 5px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #1E2235;
+}
+
+/* ── Typography & Labels ─────────────────────────────────────────────── */
+
+QLabel {
+    color: #F8FAFC;
+    background-color: transparent;
+}
+
+QLabel#lbl_title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #F8FAFC;
+    letter-spacing: 0.6px;
+}
+
+QLabel#lbl_subtitle {
+    font-size: 11px;
+    color: #94A3B8;
+    letter-spacing: 0.3px;
+}
+
+QLabel#lbl_section {
+    font-size: 10px;
+    font-weight: 800;
+    color: #06B6D4;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+}
+
+QLabel#lbl_telemetry_value {
+    font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+    font-size: 12px;
+    color: #10B981;
+}
+
+/* ── Panel Surfaces & Glass Containers ──────────────────────────────── */
+
+QFrame#panel_surface {
+    background-color: rgba(20, 23, 34, 0.85);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+QFrame#panel_settings {
+    background-color: rgba(15, 17, 26, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+QFrame#title_bar {
+    background-color: #090A0F;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Tooltips ───────────────────────────────────────────────────────── */
+
+QToolTip {
+    background-color: #1E2235;
+    color: #F8FAFC;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 12px;
+}

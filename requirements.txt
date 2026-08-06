@@ -1,0 +1,46 @@
+# ============================================================
+# Hybrid AI Voice Assistant — Python Dependencies
+# Compatible with Python 3.10 – 3.12
+# ============================================================
+
+# --- Server & WebSockets ---
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+websockets>=12.0
+av>=12.0.0
+
+# --- LLM: Groq API ---
+groq>=0.9.0
+
+# --- STT: Local Whisper (CTranslate2-accelerated) ---
+faster-whisper>=1.0.3
+
+# --- Audio I/O ---
+sounddevice>=0.5.0
+soundfile>=0.12.1
+
+# --- Numeric / Array processing ---
+numpy>=2.0.2
+
+# --- VAD: webrtcvad (lightweight) ---
+webrtcvad>=2.0.10
+
+# --- TTS: Kokoro ONNX (primary) ---
+kokoro-onnx>=0.4.0
+
+# --- TTS: Fallback ---
+pyttsx3>=2.90
+
+# --- Config / Env ---
+python-dotenv>=1.0.0
+
+# --- GUI: PySide6 Desktop UI ---
+PySide6>=6.7.0
+
+# --- Testing ---
+pytest>=8.0
+pytest-mock>=3.14.0
+pytest-qt>=4.4.0
+
+# --- HTTP / Download utility ---
+requests>=2.31.0

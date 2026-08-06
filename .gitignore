@@ -1,0 +1,43 @@
+# ============================================================
+# Git Ignore — Nyra AI Voice Assistant
+# ============================================================
+
+# --- Secrets & Certificates ---
+.env
+.env.*
+*.pem
+*.crt
+*.key
+cert.pem
+key.pem
+
+# --- Python & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# --- Testing & Coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDEs & System Files ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Models & Heavy Assets ---
+models/
+*.onnx
+*.bin
+
+# --- Temporary / Log files ---
+*.log
+scratch/
