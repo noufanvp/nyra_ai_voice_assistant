@@ -596,12 +596,7 @@ def mobile_web_app():
   </div>
 
   <!-- Streaming Chat Display -->
-  <div id="chat-display">
-    <div class="msg-row assistant">
-      <img src="/assets/avatar.png" class="chat-avatar" alt="Nyra">
-      <div class="chat-bubble">Hello! I'm Nyra. Tap and hold the center mic button to speak with me!</div>
-    </div>
-  </div>
+  <div id="chat-display"></div>
 
   <!-- Floating Cyber Control Dock Nav Bar -->
   <div class="dock-area">
@@ -758,9 +753,12 @@ def mobile_web_app():
     }
 
     // --- WebSocket Messaging ---
+    let currentAssistantBubble = null;
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'transcript') {
+        currentAssistantBubble = null;
         if (data.text) {
           appendMessage(data.text, 'user');
           setState('PROCESSING');
@@ -768,7 +766,7 @@ def mobile_web_app():
       } else if (data.type === 'response_chunk') {
         setState('SPEAKING');
         if (data.text) {
-          appendMessage(data.text, 'assistant');
+          appendAssistantChunk(data.text);
         }
         if (data.audio_b64) {
           const audio = new Audio("data:audio/wav;base64," + data.audio_b64);
@@ -777,8 +775,10 @@ def mobile_web_app():
           });
         }
       } else if (data.type === 'done') {
+        currentAssistantBubble = null;
         setState('IDLE');
       } else if (data.type === 'error') {
+        currentAssistantBubble = null;
         setState('IDLE');
         if (data.message) {
           appendMessage("⚠️ " + data.message, 'assistant');
@@ -786,18 +786,34 @@ def mobile_web_app():
       }
     };
 
-    function appendMessage(text, sender) {
-      // Avoid duplicate initial greetings if already present
-      if (sender === 'assistant' && chatDisplay.children.length === 1) {
-        const firstBubble = chatDisplay.querySelector('.chat-bubble');
-        if (firstBubble && firstBubble.textContent.trim() === text.trim()) {
-          return;
-        }
-      }
+    function appendAssistantChunk(text) {
+      if (currentAssistantBubble) {
+        currentAssistantBubble.textContent += " " + text;
+      } else {
+        const row = document.createElement('div');
+        row.className = 'msg-row assistant';
+        const img = document.createElement('img');
+        img.src = '/assets/avatar.png';
+        img.className = 'chat-avatar';
+        img.alt = 'Nyra';
+        row.appendChild(img);
 
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.textContent = text;
+        row.appendChild(bubble);
+
+        currentAssistantBubble = bubble;
+        chatDisplay.appendChild(row);
+      }
+      chatDisplay.scrollTop = chatDisplay.scrollHeight;
+    }
+
+    function appendMessage(text, sender) {
+      currentAssistantBubble = null;
       const row = document.createElement('div');
       row.className = 'msg-row ' + sender;
-      
+
       const bubble = document.createElement('div');
       bubble.className = 'chat-bubble';
       bubble.textContent = text;
@@ -809,7 +825,7 @@ def mobile_web_app():
         img.alt = 'Nyra';
         row.appendChild(img);
       }
-      
+
       row.appendChild(bubble);
       chatDisplay.appendChild(row);
       chatDisplay.scrollTop = chatDisplay.scrollHeight;
