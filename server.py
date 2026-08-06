@@ -40,6 +40,8 @@ logging.basicConfig(
     format=CONFIG.logging.fmt,
     datefmt=CONFIG.logging.datefmt,
 )
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub.utils._http").setLevel(logging.ERROR)
 logger = logging.getLogger("nyra.server")
 
 app = FastAPI(
