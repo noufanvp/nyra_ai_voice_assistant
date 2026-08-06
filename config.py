@@ -65,9 +65,9 @@ class AudioConfig:
 class STTConfig:
     """Parameters for faster-whisper local STT."""
 
-    # model_size: "tiny", "base", "small", "medium", "large-v3"
-    # small provides superior accuracy for complex technical/scientific vocabulary (~1.5s on CPU).
-    model_size: str = "small"
+    # model_size: "tiny.en", "tiny", "base", "small", "medium"
+    # "tiny.en" uses only ~75MB RAM, ideal for Render free tier (512MB limit)
+    model_size: str = field(default_factory=lambda: os.getenv("STT_MODEL_SIZE", "tiny.en"))
 
     # Inference device: "cpu" or "cuda"
     device: str = "cpu"
@@ -75,8 +75,8 @@ class STTConfig:
     # Quantization: "int8", "float16", "float32"
     compute_type: str = "int8"
 
-    # beam size (higher = better accuracy for complex terms, 3 is ideal for CPU)
-    beam_size: int = 3
+    # beam size (1 for fastest low-memory CPU inference)
+    beam_size: int = 1
 
     # Language hint ("en" for English-only model)
     language: str | None = "en"
@@ -85,7 +85,7 @@ class STTConfig:
     allowed_languages: list = field(default_factory=lambda: ["en"])
 
     # Number of CPU threads for CTranslate2
-    cpu_threads: int = 4
+    cpu_threads: int = 2
 
 
 # ---------------------------------------------------------------------------
