@@ -135,6 +135,28 @@ class WhisperTranscriber:
             logger.exception("Failed to load Whisper model: %s", exc)
             raise
 
+    def _transcribe_groq(self, wav_buffer: io.BytesIO) -> str | None:
+        """Transcribe using Groq Cloud API (whisper-large-v3-turbo, 0 MB RAM, sub-100ms)."""
+        import os
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            return None
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            wav_buffer.seek(0)
+            res = client.audio.transcriptions.create(
+                file=("audio.wav", wav_buffer, "audio/wav"),
+                model="whisper-large-v3-turbo",
+                response_format="text",
+                language="en",
+            )
+            text = str(res).strip() if res else ""
+            return text
+        except Exception as err:
+            logger.warning("Groq STT API failed (%s), falling back to local Whisper...", err)
+            return None
+
     def transcribe(self, audio: np.ndarray, sample_rate: int = 16_000) -> str:
         """
         Transcribe a numpy float32 audio array to text.
@@ -159,6 +181,20 @@ class WhisperTranscriber:
         wav_buffer = _numpy_to_wav_bytes(audio, sample_rate)
 
         t0 = time.monotonic()
+
+        # 1. Try Groq Cloud STT first if GROQ_API_KEY is present (0 MB RAM, sub-100ms, whisper-large-v3-turbo)
+        groq_text = self._transcribe_groq(wav_buffer)
+        if groq_text is not None:
+            clean_text = groq_text.lower().strip()
+            if clean_text in WHISPER_HALLUCINATIONS:
+                logger.info("STT [groq-cloud]: Discarding noise hallucination: '%s'", groq_text)
+                return ""
+            elapsed_ms = (time.monotonic() - t0) * 1000
+            logger.info("STT [groq-cloud] ▸ '%s'  [%.0f ms]", groq_text, elapsed_ms)
+            return groq_text
+
+        # 2. Local Whisper fallback
+        self._lazy_load()
         try:
             # Single-pass transcription (VAD clipping is already done by VADRecorder)
             segments, info = self._model.transcribe(
