@@ -635,7 +635,7 @@ def mobile_web_app():
       <span class="brand-dot">◈</span>
       <div class="title-col">
         <span class="app-title">Nyra AI</span>
-        <span class="app-subtitle">Al Irshad Public School · Mentored by Aitute</span>
+        <span class="app-subtitle">Al Irshad Central School · Mentored by Aitute</span>
       </div>
     </div>
   </header>
@@ -1187,7 +1187,7 @@ async def voice_websocket(websocket: WebSocket):
 
     # Automatically send introduction greeting speech on link open
     try:
-        intro_text = "Hello! I am Nyra, an AI assistant made by the students of Al Irshad Public School with the help of Aitute. Tap and hold the mic button to speak with me!"
+        intro_text = "Hello! I am Nyra, an AI assistant made by the students of Al Irshad Central School with the help of Aitute. Tap and hold the mic button to speak with me!"
         tts = get_tts_engine()
         audio_b64 = ""
         sr = 22050

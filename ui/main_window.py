@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
         # Custom Title Bar
         self._title_bar = _TitleBar(
             "Nyra AI",
-            "Al Irshad Public School · Mentored by Aitute",
+            "Al Irshad Central School · Mentored by Aitute",
             self,
         )
         root.addWidget(self._title_bar)

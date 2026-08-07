@@ -1,5 +1,5 @@
 """
-tests/test_student_presets.py — Unit tests for Student Q&A Preset Engine.
+tests/test_student_presets.py — Unit tests for Student Q&A Preset Engine with Answer Variations.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from core.student_presets import (
     find_preset_answer,
     get_presets_by_category,
     normalize_query,
+    reset_preset_tracker,
 )
 from core.llm import GroqClientWrapper
 from config import LLMConfig
@@ -24,7 +25,25 @@ class TestStudentPresetsEngine:
             assert "category" in preset
             assert "question" in preset
             assert "answer" in preset
+            assert "answers" in preset
+            assert len(preset["answers"]) >= 3
             assert len(preset["triggers"]) > 0
+
+    def test_answer_variations_rotation(self):
+        reset_preset_tracker()
+        q = "what is photosynthesis"
+        v1 = find_preset_answer(q)
+        v2 = find_preset_answer(q)
+        v3 = find_preset_answer(q)
+        v4 = find_preset_answer(q)
+        v5 = find_preset_answer(q)
+
+        # Ensure all 4 variations are distinct
+        variations = {v1, v2, v3, v4}
+        assert len(variations) == 4, f"Expected 4 distinct variations, got {len(variations)}"
+
+        # 5th call should cycle back to variation 1
+        assert v5 == v1
 
     def test_normalize_query(self):
         raw = "  What's Photosynthesis, Please?  "
@@ -34,40 +53,41 @@ class TestStudentPresetsEngine:
         assert "," not in normalized
 
     def test_exact_trigger_matches(self):
+        reset_preset_tracker()
         # Science
         ans1 = find_preset_answer("what is photosynthesis")
         assert ans1 is not None
-        assert "green plants" in ans1.lower()
+        assert any(k in ans1.lower() for k in ["green plants", "light energy", "glucose", "chlorophyll"])
 
         # Math
         ans2 = find_preset_answer("explain pythagoras theorem")
         assert ans2 is not None
-        assert "squared" in ans2.lower()
+        assert "squared" in ans2.lower() or "hypotenuse" in ans2.lower()
 
         # Computer Science
         ans3 = find_preset_answer("what is python")
         assert ans3 is not None
-        assert "programming language" in ans3.lower()
+        assert "python" in ans3.lower() or "programming" in ans3.lower()
 
         # Study Skills
         ans4 = find_preset_answer("how to study effectively")
         assert ans4 is not None
-        assert "active recall" in ans4.lower()
+        assert any(k in ans4.lower() for k in ["recall", "spaced", "active", "cramming"])
 
         # Creator Info
         ans5 = find_preset_answer("who created you")
         assert ans5 is not None
-        assert "al irshad public school" in ans5.lower()
+        assert "al irshad central school" in ans5.lower()
 
     def test_fuzzy_variation_matches(self):
         # User adds extra words or variations
         ans = find_preset_answer("hey nyra can you tell me what is gravity please")
         assert ans is not None
-        assert "attraction" in ans.lower()
+        assert any(k in ans.lower() for k in ["attraction", "mass", "newton", "force"])
 
         ans_pi = find_preset_answer("what is the value of pi")
         assert ans_pi is not None
-        assert "3.14159" in ans_pi
+        assert "3.14" in ans_pi
 
     def test_unmatched_query_returns_none(self):
         # Non-preset query should return None to trigger LLM fallback
@@ -75,19 +95,16 @@ class TestStudentPresetsEngine:
         assert ans is None
 
     def test_zain_student_performance_query(self):
+        reset_preset_tracker()
         # Parent query asking about previous month performance of son Zain
         ans = find_preset_answer("what is the previous month performance of my son zain")
         assert ans is not None
-        assert "95%" in ans
-        assert "Science" in ans
-        assert "Robotics" in ans
-        assert "essay writing" in ans or "time allocation" in ans
+        assert "Zain" in ans or "95%" in ans or "IT" in ans or "Science" in ans
 
         # Parent query asking about strengths and weaknesses
         ans_sw = find_preset_answer("what are zain's strengths and weaknesses")
         assert ans_sw is not None
-        assert "analytical problem-solving" in ans_sw.lower()
-        assert "time management" in ans_sw.lower()
+        assert any(k in ans_sw.lower() for k in ["analytical", "logical", "leadership", "strengths"])
 
     def test_get_student_record_summary(self):
         from core.student_presets import get_student_record_summary
@@ -114,4 +131,4 @@ class TestStudentPresetsEngine:
 
         responses = list(llm.stream_sentences("what is an algorithm"))
         assert len(responses) == 1
-        assert "step-by-step" in responses[0].lower()
+        assert any(k in responses[0].lower() for k in ["step-by-step", "recipe", "logical", "ordered"])
