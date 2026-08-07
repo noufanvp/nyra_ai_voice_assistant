@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QProgressBar,
+    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -35,6 +36,7 @@ from ui.components.status_badge import StatusBadge
 from ui.components.visualizer import WaveformVisualizer
 from ui.theme_manager import ThemeManager
 from ui.views.settings_drawer import SettingsDrawer
+from ui.views.student_presets_drawer import StudentPresetsDrawer
 
 _STYLES_DIR = Path(__file__).parent / "styles"
 
@@ -216,6 +218,29 @@ class MainWindow(QMainWindow):
         badge_row.addWidget(self._status_badge, 0, Qt.AlignLeft)
         badge_row.addStretch(1)
 
+        # Student Presets Button
+        self._btn_presets = QPushButton("🎓 STUDENT PRESETS")
+        self._btn_presets.setCursor(Qt.PointingHandCursor)
+        self._btn_presets.setToolTip("Browse presets for Math, Science, CS, and Study Skills")
+        self._btn_presets.setStyleSheet("""
+            QPushButton {
+                background: rgba(16, 185, 129, 0.12);
+                color: #10B981;
+                border: 1px solid #10B981;
+                border-radius: 10px;
+                padding: 3px 10px;
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: 0.6px;
+            }
+            QPushButton:hover {
+                background: #10B981;
+                color: #FFFFFF;
+            }
+        """)
+        badge_row.addWidget(self._btn_presets, 0, Qt.AlignRight)
+        badge_row.addSpacing(8)
+
         # Live status pill indicator
         self._live_dot = QLabel("● CYBER ONLINE  [EN]")
         self._live_dot.setStyleSheet(
@@ -245,6 +270,10 @@ class MainWindow(QMainWindow):
         # Settings Drawer Overlay
         self._drawer = SettingsDrawer(central)
         self._drawer.hide()
+
+        # Student Presets Drawer Overlay
+        self._presets_drawer = StudentPresetsDrawer(central)
+        self._presets_drawer.hide()
 
     def _make_loading_panel(self) -> QWidget:
         panel = QFrame()
@@ -324,6 +353,10 @@ class MainWindow(QMainWindow):
         self._dock.settings_toggled.connect(self._on_settings_toggled)
         self._dock.clear_chat_requested.connect(self._chat.clear_chat)
         self._drawer.closed.connect(lambda: self._dock.set_settings_open(False))
+
+        # Student Presets Drawer Controls
+        self._btn_presets.clicked.connect(self._presets_drawer.toggle)
+        self._presets_drawer.preset_selected.connect(self._bridge.emit_text_query)
 
     def _on_state_changed(self, state: str) -> None:
         """Propagate state changes to badge and visualizer stage."""
@@ -416,6 +449,8 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         if self._drawer.isVisible():
             self._drawer._reposition()
+        if hasattr(self, "_presets_drawer") and self._presets_drawer.isVisible():
+            self._presets_drawer._reposition()
 
     def closeEvent(self, event) -> None:  # noqa: N802
         super().closeEvent(event)

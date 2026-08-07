@@ -411,6 +411,19 @@ def main() -> None:
 
     bridge.mute_toggled.connect(_on_manual_mute_toggle)
 
+    # ── Text / Preset query handler from the UI ────────────────────────
+    def _on_text_query_submitted(text: str) -> None:
+        logger = logging.getLogger("main")
+        if text and text.strip():
+            touch_activity()
+            stop_playback()
+            speaking_lock.clear()
+            bridge.emit_user_text(text.strip())
+            transcript_queue.put((text.strip(), 0.0))
+            logger.info("Text query / Student Preset submitted: '%s'", text.strip())
+
+    bridge.text_query_submitted.connect(_on_text_query_submitted)
+
     # ── Inter-thread queues ───────────────────────────────────────────
     audio_queue: queue.Queue      = queue.Queue(maxsize=4)
     transcript_queue: queue.Queue = queue.Queue(maxsize=4)

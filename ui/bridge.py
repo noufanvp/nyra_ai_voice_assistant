@@ -61,6 +61,9 @@ class UIBridge(QObject):
     # Timing telemetry: {"stt_ms": float, "first_token_ms": float, "tts_ms": float}
     telemetry_updated: Signal = Signal(dict)
 
+    # Emitted when a text query or preset question is submitted from the UI
+    text_query_submitted: Signal = Signal(str)
+
     # Emitted by the UI when the user manually toggles the wake state.
     # True = activate (user pressed Wake Up), False = go to sleep.
     wake_toggled: Signal = Signal(bool)
@@ -106,3 +109,7 @@ class UIBridge(QObject):
     def emit_mute_toggle(self, muted: bool) -> None:
         """Emit manual mute toggle from the UI button. Safe to call from main thread."""
         self.mute_toggled.emit(muted)
+
+    def emit_text_query(self, text: str) -> None:
+        """Emit user text query or preset question from UI. Safe to call from any thread."""
+        self.text_query_submitted.emit(text)

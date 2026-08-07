@@ -100,6 +100,10 @@ class TestServerEndpoints(unittest.TestCase):
             self.assertEqual(chunk.get("type"), "response_chunk")
             self.assertEqual(chunk.get("text"), "Hello from WebSocket.")
 
+            audio_chunk = websocket.receive_json()
+            self.assertEqual(audio_chunk.get("type"), "audio_chunk")
+            self.assertTrue(len(audio_chunk.get("audio_b64", "")) > 0)
+
             done = websocket.receive_json()
             self.assertEqual(done.get("type"), "done")
 

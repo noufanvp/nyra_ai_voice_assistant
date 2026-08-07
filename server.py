@@ -12,6 +12,7 @@ Provides:
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import json
@@ -475,6 +476,35 @@ def mobile_web_app():
       border-bottom-left-radius: 4px;
     }
 
+    /* --- Student Preset Chips Bar --- */
+    .preset-chips-bar {
+      display: flex;
+      gap: 6px;
+      padding: 4px 14px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .preset-chips-bar::-webkit-scrollbar { display: none; }
+    .chip-btn {
+      background: var(--surface-alt);
+      color: var(--text);
+      border: 1px solid var(--dock-border);
+      border-radius: 12px;
+      padding: 5px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .chip-btn:hover, .chip-btn:active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent-hover);
+    }
+
     /* --- Floating Control Dock Nav Bar --- */
     .dock-area {
       flex: 0 0 auto;
@@ -629,6 +659,16 @@ def mobile_web_app():
 
   <!-- Streaming Chat Display -->
   <div id="chat-display"></div>
+
+  <!-- Student Quick Preset Chips -->
+  <div class="preset-chips-bar">
+    <button class="chip-btn" onclick="sendPresetText('What is the previous month performance of my son Zain?')">📊 Zain's Performance Report</button>
+    <button class="chip-btn" onclick="sendPresetText('What is photosynthesis?')">🌱 Photosynthesis</button>
+    <button class="chip-btn" onclick="sendPresetText('What is Pythagorean theorem?')">📐 Pythagorean Theorem</button>
+    <button class="chip-btn" onclick="sendPresetText('What is Newton\'s first law of motion?')">⚛️ Newton's 1st Law</button>
+    <button class="chip-btn" onclick="sendPresetText('What is Python programming language?')">💻 Python</button>
+    <button class="chip-btn" onclick="sendPresetText('How to study effectively?')">📚 Study Tips</button>
+  </div>
 
   <!-- Floating Cyber Control Dock Nav Bar -->
   <div class="dock-area">
@@ -832,6 +872,14 @@ def mobile_web_app():
     function enqueueAudio(b64Audio) {
       audioQueue.push(b64Audio);
       playNextAudioInQueue();
+    }
+
+    function sendPresetText(query) {
+      if (!query || !ws || ws.readyState !== WebSocket.OPEN) return;
+      stopAllAudio();
+      appendMessage(query, 'user');
+      setState('PROCESSING');
+      ws.send(JSON.stringify({ type: 'text', text: query }));
     }
 
     // --- WebSocket Messaging ---

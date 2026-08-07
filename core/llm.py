@@ -16,6 +16,8 @@ import time
 from collections.abc import Generator
 from typing import Optional
 
+from core.student_presets import find_preset_answer
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -106,13 +108,19 @@ class GroqClientWrapper:
         user_text: str,
         conversation_history: Optional[list[dict]] = None,
     ) -> Generator[str, None, None]:
-        """Stream the LLM response and yield complete sentences one at a time."""
-        if not self._client:
-            yield "I'm sorry, the AI service is not configured. Please set your API key."
-            return
-
         if not user_text.strip():
             yield "I didn't catch that. Could you please repeat?"
+            return
+
+        # ── Fast Student Preset Lookup ──────────────────────────────────
+        preset_answer = find_preset_answer(user_text)
+        if preset_answer:
+            logger.info("Serving instant student preset response for: '%s'", user_text)
+            yield preset_answer
+            return
+
+        if not self._client:
+            yield "I'm sorry, the AI service is not configured. Please set your API key."
             return
 
         messages = [{"role": "system", "content": self.cfg.system_prompt}]
