@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -36,7 +37,6 @@ from ui.components.status_badge import StatusBadge
 from ui.components.visualizer import WaveformVisualizer
 from ui.theme_manager import ThemeManager
 from ui.views.settings_drawer import SettingsDrawer
-from ui.views.student_presets_drawer import StudentPresetsDrawer
 
 _STYLES_DIR = Path(__file__).parent / "styles"
 
@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
         # Custom Title Bar
         self._title_bar = _TitleBar(
             "Nyra AI",
-            "Al Irshad Central School · Mentored by Aitute",
+            "Al Irshad Central School · Developed by Aitute",
             self,
         )
         root.addWidget(self._title_bar)
@@ -218,28 +218,7 @@ class MainWindow(QMainWindow):
         badge_row.addWidget(self._status_badge, 0, Qt.AlignLeft)
         badge_row.addStretch(1)
 
-        # Student Presets Button
-        self._btn_presets = QPushButton("🎓 STUDENT PRESETS")
-        self._btn_presets.setCursor(Qt.PointingHandCursor)
-        self._btn_presets.setToolTip("Browse presets for Math, Science, CS, and Study Skills")
-        self._btn_presets.setStyleSheet("""
-            QPushButton {
-                background: rgba(16, 185, 129, 0.12);
-                color: #10B981;
-                border: 1px solid #10B981;
-                border-radius: 10px;
-                padding: 3px 10px;
-                font-size: 9px;
-                font-weight: 700;
-                letter-spacing: 0.6px;
-            }
-            QPushButton:hover {
-                background: #10B981;
-                color: #FFFFFF;
-            }
-        """)
-        badge_row.addWidget(self._btn_presets, 0, Qt.AlignRight)
-        badge_row.addSpacing(8)
+
 
         # Live status pill indicator
         self._live_dot = QLabel("● CYBER ONLINE  [EN]")
@@ -253,6 +232,57 @@ class MainWindow(QMainWindow):
         # Chat Container
         self._chat = ChatDisplay()
         root.addWidget(self._chat, 1)
+
+        # Preset Keyword Bubbles Bar (Bottom Pill Bar)
+        scroll_chips = QScrollArea()
+        scroll_chips.setFixedHeight(38)
+        scroll_chips.setWidgetResizable(True)
+        scroll_chips.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_chips.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_chips.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
+        chips_container = QWidget()
+        chips_container.setStyleSheet("background: transparent;")
+        chips_layout = QHBoxLayout(chips_container)
+        chips_layout.setContentsMargins(16, 2, 16, 2)
+        chips_layout.setSpacing(8)
+
+        preset_chips_data = [
+            ("📊 Yaseen's Report", "What is the previous month performance of my son Yaseen?"),
+            ("🌱 Photosynthesis", "What is photosynthesis?"),
+            ("📐 Pythagoras", "What is Pythagorean theorem?"),
+            ("⚛️ Newton's 1st Law", "What is Newton's first law of motion?"),
+            ("💻 Python", "What is Python programming language?"),
+            ("📚 Study Tips", "How to study effectively?"),
+        ]
+
+        for label_text, query_text in preset_chips_data:
+            btn = QPushButton(label_text)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background: #141722;
+                    color: #F8FAFC;
+                    border: 1px solid rgba(255, 255, 255, 0.14);
+                    border-radius: 14px;
+                    padding: 5px 12px;
+                    font-size: 11px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background: #6366F1;
+                    color: #FFFFFF;
+                    border-color: #818CF8;
+                }
+                QPushButton:pressed {
+                    background: #4F46E5;
+                }
+            """)
+            btn.clicked.connect(lambda _, q=query_text: self._bridge.emit_text_query(q))
+            chips_layout.addWidget(btn)
+
+        scroll_chips.setWidget(chips_container)
+        root.addWidget(scroll_chips)
 
         # Floating Control Dock Area
         dock_container = QWidget()
@@ -271,9 +301,7 @@ class MainWindow(QMainWindow):
         self._drawer = SettingsDrawer(central)
         self._drawer.hide()
 
-        # Student Presets Drawer Overlay
-        self._presets_drawer = StudentPresetsDrawer(central)
-        self._presets_drawer.hide()
+
 
     def _make_loading_panel(self) -> QWidget:
         panel = QFrame()
@@ -354,9 +382,7 @@ class MainWindow(QMainWindow):
         self._dock.clear_chat_requested.connect(self._chat.clear_chat)
         self._drawer.closed.connect(lambda: self._dock.set_settings_open(False))
 
-        # Student Presets Drawer Controls
-        self._btn_presets.clicked.connect(self._presets_drawer.toggle)
-        self._presets_drawer.preset_selected.connect(self._bridge.emit_text_query)
+
 
     def _on_state_changed(self, state: str) -> None:
         """Propagate state changes to badge and visualizer stage."""
@@ -449,8 +475,7 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         if self._drawer.isVisible():
             self._drawer._reposition()
-        if hasattr(self, "_presets_drawer") and self._presets_drawer.isVisible():
-            self._presets_drawer._reposition()
+
 
     def closeEvent(self, event) -> None:  # noqa: N802
         super().closeEvent(event)

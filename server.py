@@ -476,11 +476,11 @@ def mobile_web_app():
       border-bottom-left-radius: 4px;
     }
 
-    /* --- Student Preset Chips Bar --- */
+    /* --- Preset Keyword Chips / Bubbles Bar --- */
     .preset-chips-bar {
       display: flex;
-      gap: 6px;
-      padding: 4px 14px;
+      gap: 8px;
+      padding: 6px 14px;
       overflow-x: auto;
       white-space: nowrap;
       scrollbar-width: none;
@@ -491,9 +491,9 @@ def mobile_web_app():
       background: var(--surface-alt);
       color: var(--text);
       border: 1px solid var(--dock-border);
-      border-radius: 12px;
-      padding: 5px 10px;
-      font-size: 10px;
+      border-radius: 14px;
+      padding: 6px 12px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       flex-shrink: 0;
@@ -504,6 +504,8 @@ def mobile_web_app():
       color: #FFFFFF;
       border-color: var(--accent-hover);
     }
+
+
 
     /* --- Floating Control Dock Nav Bar --- */
     .dock-area {
@@ -635,7 +637,7 @@ def mobile_web_app():
       <span class="brand-dot">◈</span>
       <div class="title-col">
         <span class="app-title">Nyra AI</span>
-        <span class="app-subtitle">Al Irshad Central School · Mentored by Aitute</span>
+        <span class="app-subtitle">Al Irshad Central School · Developed by Aitute</span>
       </div>
     </div>
   </header>
@@ -660,15 +662,17 @@ def mobile_web_app():
   <!-- Streaming Chat Display -->
   <div id="chat-display"></div>
 
-  <!-- Student Quick Preset Chips -->
+  <!-- Preset Keyword Bubbles Bar -->
   <div class="preset-chips-bar">
-    <button class="chip-btn" onclick="sendPresetText('What is the previous month performance of my son Zain?')">📊 Zain's Performance Report</button>
+    <button class="chip-btn" onclick="sendPresetText('What is the previous month performance of my son Yaseen?')">📊 Yaseen's Report</button>
     <button class="chip-btn" onclick="sendPresetText('What is photosynthesis?')">🌱 Photosynthesis</button>
-    <button class="chip-btn" onclick="sendPresetText('What is Pythagorean theorem?')">📐 Pythagorean Theorem</button>
+    <button class="chip-btn" onclick="sendPresetText('What is Pythagorean theorem?')">📐 Pythagoras</button>
     <button class="chip-btn" onclick="sendPresetText('What is Newton\'s first law of motion?')">⚛️ Newton's 1st Law</button>
     <button class="chip-btn" onclick="sendPresetText('What is Python programming language?')">💻 Python</button>
     <button class="chip-btn" onclick="sendPresetText('How to study effectively?')">📚 Study Tips</button>
   </div>
+
+
 
   <!-- Floating Cyber Control Dock Nav Bar -->
   <div class="dock-area">
@@ -1187,7 +1191,7 @@ async def voice_websocket(websocket: WebSocket):
 
     # Automatically send introduction greeting speech on link open
     try:
-        intro_text = "Hello! I am Nyra, an AI assistant made by the students of Al Irshad Central School with the help of Aitute. Tap and hold the mic button to speak with me!"
+        intro_text = "Hello! I am Nyra, an AI assistant made by Aitute for Al Irshad Central School. Tap and hold the mic button to speak with me!"
         tts = get_tts_engine()
         audio_b64 = ""
         sr = 22050

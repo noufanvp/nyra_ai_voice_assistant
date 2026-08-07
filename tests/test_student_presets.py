@@ -94,23 +94,30 @@ class TestStudentPresetsEngine:
         ans = find_preset_answer("what is the current temperature in Tokyo?")
         assert ans is None
 
-    def test_zain_student_performance_query(self):
+    def test_yaseen_student_performance_query(self):
         reset_preset_tracker()
-        # Parent query asking about previous month performance of son Zain
-        ans = find_preset_answer("what is the previous month performance of my son zain")
+        # Parent query asking about previous month performance of son Yaseen
+        ans = find_preset_answer("what is the previous month performance of my son yaseen")
         assert ans is not None
-        assert "Zain" in ans or "95%" in ans or "IT" in ans or "Science" in ans
+        assert "Yaseen" in ans or "95%" in ans or "IT" in ans or "Science" in ans
 
         # Parent query asking about strengths and weaknesses
-        ans_sw = find_preset_answer("what are zain's strengths and weaknesses")
+        ans_sw = find_preset_answer("what are yaseen's strengths and weaknesses")
         assert ans_sw is not None
         assert any(k in ans_sw.lower() for k in ["analytical", "logical", "leadership", "strengths"])
 
+    def test_inauguration_preset(self):
+        reset_preset_tracker()
+        ans = find_preset_answer("I am inaugurating this project")
+        assert ans is not None
+        assert "C.K. Kasim" in ans or "Kasim" in ans
+        assert "inaugurating" in ans.lower() or "inaugurated" in ans.lower()
+
     def test_get_student_record_summary(self):
         from core.student_presets import get_student_record_summary
-        record = get_student_record_summary("Zain")
+        record = get_student_record_summary("Yaseen")
         assert record is not None
-        assert record["name"] == "Zain"
+        assert record["name"] == "Yaseen"
         assert record["grade"] == "8th Grade"
         assert record["academic_scores"]["Information Technology"] == 98
         assert "Robotics Team Captain" in record["extracurricular"]

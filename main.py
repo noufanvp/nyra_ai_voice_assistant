@@ -521,8 +521,8 @@ def main() -> None:
 
         # ── Spoken introduction greeting on app startup ─────────────────
         intro_greeting = (
-            "Hello! I am Nyra, an AI assistant made by the students of Al Irshad Central School "
-            "with the help of Aitute. Press and hold the mic button to speak with me."
+            "Hello! I am Nyra, an AI assistant made by Aitute for Al Irshad Central School. "
+            "Press and hold the mic button to speak with me."
         )
 
         def play_intro():

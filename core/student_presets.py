@@ -338,47 +338,47 @@ STUDENT_PRESETS: list[PresetItem] = [
 
     # ── Student Reports & Academic Performance ────────────────────────────
     {
-        "id": "zain_performance",
+        "id": "yaseen_performance",
         "category": "Student Reports",
-        "question": "What is the previous month performance of my son Zain?",
-        "answer": "Last month, Zain excelled with 95% in Science and 98% in Information Technology while captaining the Robotics team. To improve further, he should focus on timed English essay writing and exam time allocation.",
+        "question": "What is the previous month performance of my son Yaseen?",
+        "answer": "Last month, Yaseen excelled with 95% in Science and 98% in Information Technology while captaining the Robotics team. To improve further, he should focus on timed English essay writing and exam time allocation.",
         "answers": [
-            "Last month, Zain excelled with 95% in Science and 98% in Information Technology while captaining the Robotics team. To improve further, he should focus on timed English essay writing and exam time allocation.",
-            "Zain had an outstanding month! He scored 98% in IT and 95% in Science, leading the Coding Club and Robotics team. His main focus area now is practicing timed essay writing in English.",
-            "According to Zain's monthly performance report, he achieved top marks in Computer Science (98%) and Science (95%). With practice on exam time management for English, he will be in top form.",
-            "Zain demonstrated superb academic strength in Science and IT last month. He continues to shine in extracurricular robotics, with extra practice recommended for English essay formatting under timed conditions.",
+            "Last month, Yaseen excelled with 95% in Science and 98% in Information Technology while captaining the Robotics team. To improve further, he should focus on timed English essay writing and exam time allocation.",
+            "Yaseen had an outstanding month! He scored 98% in IT and 95% in Science, leading the Coding Club and Robotics team. His main focus area now is practicing timed essay writing in English.",
+            "According to Yaseen's monthly performance report, he achieved top marks in Computer Science (98%) and Science (95%). With practice on exam time management for English, he will be in top form.",
+            "Yaseen demonstrated superb academic strength in Science and IT last month. He continues to shine in extracurricular robotics, with extra practice recommended for English essay formatting under timed conditions.",
         ],
         "triggers": [
-            "previous month performance of my son zain",
-            "previous month performance of zain",
-            "performance of my son zain",
-            "how is zain performing",
-            "how is my son zain doing",
-            "zain performance report",
-            "zain academic performance",
-            "performance of zain",
-            "zains report",
-            "zain report"
+            "previous month performance of my son yaseen",
+            "previous month performance of yaseen",
+            "performance of my son yaseen",
+            "how is yaseen performing",
+            "how is my son yaseen doing",
+            "yaseen performance report",
+            "yaseen academic performance",
+            "performance of yaseen",
+            "yaseens report",
+            "yaseen report"
         ],
     },
     {
-        "id": "zain_strengths_weaknesses",
+        "id": "yaseen_strengths_weaknesses",
         "category": "Student Reports",
-        "question": "What are Zain's strengths and weaknesses?",
-        "answer": "Zain's strengths are analytical problem-solving, coding, and robotics leadership. His key area for growth is time management during written exams.",
+        "question": "What are Yaseen's strengths and weaknesses?",
+        "answer": "Yaseen's strengths are analytical problem-solving, coding, and robotics leadership. His key area for growth is time management during written exams.",
         "answers": [
-            "Zain's strengths are analytical problem-solving, coding, and robotics leadership. His key area for growth is time management during written exams.",
-            "Zain excels in logical problem-solving, programming, and team leadership. He can improve by practicing time allocation on long written English exams.",
-            "Zain's major strengths include high technical aptitude in IT and Science alongside great leadership skills. His primary growth goal is building speed in essay writing.",
-            "Analytical thinking and coding are Zain's biggest strengths. To balance his profile, he's working on managing his time better during long written test papers.",
+            "Yaseen's strengths are analytical problem-solving, coding, and robotics leadership. His key area for growth is time management during written exams.",
+            "Yaseen excels in logical problem-solving, programming, and team leadership. He can improve by practicing time allocation on long written English exams.",
+            "Yaseen's major strengths include high technical aptitude in IT and Science alongside great leadership skills. His primary growth goal is building speed in essay writing.",
+            "Analytical thinking and coding are Yaseen's biggest strengths. To balance his profile, he's working on managing his time better during long written test papers.",
         ],
         "triggers": [
-            "zain strengths and weaknesses",
-            "strengths and weaknesses of zain",
-            "what are zains strengths",
-            "what are zain's weaknesses",
-            "zain strengths",
-            "zain weaknesses"
+            "yaseen strengths and weaknesses",
+            "strengths and weaknesses of yaseen",
+            "what are yaseens strengths",
+            "what are yaseen's weaknesses",
+            "yaseen strengths",
+            "yaseen weaknesses"
         ],
     },
 
@@ -387,12 +387,12 @@ STUDENT_PRESETS: list[PresetItem] = [
         "id": "who_created_you",
         "category": "General",
         "question": "Who created you?",
-        "answer": "I am Nyra, an AI voice assistant created by the talented students of Al Irshad Central School under the guidance and mentorship of Aitute.",
+        "answer": "I am Nyra, an AI voice assistant developed by Aitute for Al Irshad Central School.",
         "answers": [
-            "I am Nyra, an AI voice assistant created by the talented students of Al Irshad Central School under the guidance and mentorship of Aitute.",
-            "I was built by the student innovation team at Al Irshad Central School, mentored by Aitute to bring smart AI assistance to learning.",
-            "Nyra was developed as an educational project by students at Al Irshad Central School in collaboration with Aitute.",
-            "The bright students of Al Irshad Central School designed and developed me with guidance from Aitute to serve as a personalized study companion.",
+            "I am Nyra, an AI voice assistant developed by Aitute for Al Irshad Central School.",
+            "I was built by Aitute as an AI assistant project for Al Irshad Central School.",
+            "Nyra was developed by Aitute for Al Irshad Central School to serve as an educational study companion.",
+            "Aitute designed and developed me specifically for Al Irshad Central School.",
         ],
         "triggers": [
             "who created you", "who made you", "who built you",
@@ -415,12 +415,30 @@ STUDENT_PRESETS: list[PresetItem] = [
             "what are your features", "what can nyra do"
         ],
     },
+    {
+        "id": "inauguration_thank_you",
+        "category": "General",
+        "question": "Project Inauguration Response",
+        "answer": "Thank you so much, Honorable MLA Mr. C.K. Kasim, for inaugurating Nyra! We are deeply honored by your presence and support for Al Irshad Central School and Aitute.",
+        "answers": [
+            "Thank you so much, Honorable MLA Mr. C.K. Kasim, for inaugurating Nyra! We are deeply honored by your presence and support for Al Irshad Central School and Aitute.",
+            "Heartfelt thanks to Honorable MLA Mr. C.K. Kasim sir for inaugurating our project! On behalf of Al Irshad Central School and Aitute, we express our sincere gratitude.",
+            "Thank you, Honorable MLA Mr. C.K. Kasim, for declaring Nyra inaugurated! We are excited to empower students with this AI learning companion under your gracious leadership.",
+            "We extend our warmest gratitude to Honorable MLA Mr. C.K. Kasim for inaugurating Nyra today! Thank you sir for encouraging innovation in education.",
+        ],
+        "triggers": [
+            "inaugurating", "inaugurate", "i am inaugurating", "i inaugurate",
+            "inaugurating nyra", "inaugurate nyra", "i am inaugurating nyra",
+            "declare this project open", "declaring open", "inauguration",
+            "ck kasim", "c k kasim", "mr ck kasim", "honorable mla"
+        ],
+    },
 ]
 
 # Structured Student Database for Extensible Record Queries
 STUDENT_RECORDS = {
-    "zain": {
-        "name": "Zain",
+    "yaseen": {
+        "name": "Yaseen",
         "grade": "8th Grade",
         "academic_scores": {
             "Information Technology": 98,
@@ -442,8 +460,8 @@ STUDENT_RECORDS = {
             "Time management during long written exams",
             "English essay formatting and structure",
         ],
-        "summary": "Zain achieved an outstanding 95% in Science and 98% in CS last month, showing exceptional logic and robotics leadership.",
-        "improvement_advice": "To reach his full potential, Zain should practice timed essay writing and pace himself carefully during written exams.",
+        "summary": "Yaseen achieved an outstanding 95% in Science and 98% in CS last month, showing exceptional logic and robotics leadership.",
+        "improvement_advice": "To reach his full potential, Yaseen should practice timed essay writing and pace himself carefully during written exams.",
     }
 }
 
