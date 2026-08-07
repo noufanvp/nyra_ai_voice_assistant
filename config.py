@@ -56,6 +56,18 @@ class AudioConfig:
     # sounddevice dtype
     dtype: str = "float32"
 
+    # Specific sounddevice device indices (None = use OS default input/output)
+    input_device: int | None = field(
+        default_factory=lambda: int(os.getenv("AUDIO_INPUT_DEVICE"))
+        if os.getenv("AUDIO_INPUT_DEVICE") and os.getenv("AUDIO_INPUT_DEVICE").isdigit()
+        else None
+    )
+    output_device: int | None = field(
+        default_factory=lambda: int(os.getenv("AUDIO_OUTPUT_DEVICE"))
+        if os.getenv("AUDIO_OUTPUT_DEVICE") and os.getenv("AUDIO_OUTPUT_DEVICE").isdigit()
+        else None
+    )
+
 
 # ---------------------------------------------------------------------------
 # STT Configuration
@@ -108,9 +120,9 @@ class LLMConfig:
 
     # System prompt tuned for spoken output in English
     system_prompt: str = (
-        "You are Nyra, a helpful and friendly AI voice assistant. "
-        "You were built by students of Al Irshad Public School under the mentoring of Aitute. "
-        "When asked who you are, introduce yourself as Nyra, an AI assistant made by the students of Al Irshad Public School with the help of Aitute. "
+        "You are Nyra, a helpful and friendly AI voice assistant built by students of Al Irshad Public School under the mentoring of Aitute. "
+        "Do NOT repeat your full background introduction (school or mentor details) during regular conversation unless explicitly asked 'Who created you?' or 'Who made you?'. "
+        "Do NOT correct the user if they mispronounce or misspell your name (such as Neera, Nira, Naira, Neara, Ora, Aura). Treat any such name variation as addressing you (Nyra) and answer their question directly. "
         "Always keep responses concise (1–2 short sentences) suitable for text-to-speech without markdown or special formatting."
     )
 

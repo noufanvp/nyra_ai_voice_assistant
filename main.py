@@ -294,7 +294,7 @@ def llm_tts_worker_ui(
                 last_tts_ms = (time.monotonic() - t0) * 1000
                 logger.info("[TTS: %.0f ms] Speaking: '%s'", last_tts_ms, sentence)
                 if len(samples) > 0 and not stop_event.is_set():
-                    play_audio(samples, sr, blocking=True)
+                    play_audio(samples, sr, blocking=True, device=CONFIG.audio.output_device)
                 tts_queue.task_done()
             speaking_lock.clear()            # ← UNLOCK: microphone resumes
             playback_done.set()
@@ -428,6 +428,7 @@ def main() -> None:
         try:
             recorder = VADRecorder(
                 CONFIG.audio,
+                device=CONFIG.audio.input_device,
                 amplitude_callback=bridge.emit_amplitude,
                 abort_event=speaking_lock,   # stops recording the instant TTS plays
             )
@@ -517,7 +518,7 @@ def main() -> None:
             bridge.emit_assistant_token(intro_greeting)
             samples, sr = tts.synthesize(intro_greeting)
             if len(samples) > 0 and not stop_event.is_set():
-                play_audio(samples, sr, blocking=True)
+                play_audio(samples, sr, blocking=True, device=CONFIG.audio.output_device)
             bridge.emit_assistant_done()
             speaking_lock.clear()
             bridge.emit_state("IDLE")

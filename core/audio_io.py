@@ -345,9 +345,14 @@ class VADRecorder:
 # Audio Playback
 # ---------------------------------------------------------------------------
 
-def play_audio(samples: np.ndarray, sample_rate: int, blocking: bool = True) -> None:
+def play_audio(
+    samples: np.ndarray,
+    sample_rate: int,
+    blocking: bool = True,
+    device: Optional[int] = None,
+) -> None:
     """
-    Play a numpy audio array through the default output device.
+    Play a numpy audio array through the output device.
 
     Parameters
     ----------
@@ -357,6 +362,8 @@ def play_audio(samples: np.ndarray, sample_rate: int, blocking: bool = True) -> 
         Playback sample rate in Hz.
     blocking : bool
         If True, block until playback is complete.
+    device : int, optional
+        sounddevice output device index (None = default output).
     """
     if samples is None or len(samples) == 0:
         logger.debug("play_audio: empty samples, skipping.")
@@ -370,7 +377,7 @@ def play_audio(samples: np.ndarray, sample_rate: int, blocking: bool = True) -> 
         samples = samples / max_val
 
     try:
-        sd.play(samples, samplerate=sample_rate)
+        sd.play(samples, samplerate=sample_rate, device=device)
         if blocking:
             sd.wait()
     except sd.PortAudioError as exc:

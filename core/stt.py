@@ -45,6 +45,16 @@ def _is_allowed_script(text: str) -> bool:
     return True
 
 
+_NAME_VARIANTS_RE = re.compile(r"\b(neera|nira|naira|near a)\b", re.IGNORECASE)
+
+
+def normalize_transcript(text: str) -> str:
+    """Normalize common STT phonetic mishearings of the assistant's name 'Nyra'."""
+    if not text:
+        return ""
+    return _NAME_VARIANTS_RE.sub("Nyra", text)
+
+
 def _is_repetitive(text: str, repeat_threshold: int = 4) -> bool:
     """
     Detect Whisper hallucination loops like 'I'm a little bit of a little bit of...'.
@@ -189,9 +199,10 @@ class WhisperTranscriber:
             if clean_text in WHISPER_HALLUCINATIONS:
                 logger.info("STT [groq-cloud]: Discarding noise hallucination: '%s'", groq_text)
                 return ""
+            normalized_groq = normalize_transcript(groq_text)
             elapsed_ms = (time.monotonic() - t0) * 1000
-            logger.info("STT [groq-cloud] ▸ '%s'  [%.0f ms]", groq_text, elapsed_ms)
-            return groq_text
+            logger.info("STT [groq-cloud] ▸ '%s'  [%.0f ms]", normalized_groq, elapsed_ms)
+            return normalized_groq
 
         # 2. Local Whisper fallback
         self._lazy_load()
@@ -240,6 +251,7 @@ class WhisperTranscriber:
             logger.error("Transcription error: %s", exc)
             return ""
 
+        text = normalize_transcript(text)
         elapsed_ms = (time.monotonic() - t0) * 1000
         logger.info("STT ▸ '%s'  [%.0f ms]", text, elapsed_ms)
         return text

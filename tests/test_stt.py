@@ -78,6 +78,23 @@ class TestNumpyToWav:
         assert frames[1] == -32767
 
 
+class TestNormalizeTranscript:
+    def test_normalizes_neera(self):
+        from core.stt import normalize_transcript
+        assert normalize_transcript("Hi Neera, can you solve my doubts?") == "Hi Nyra, can you solve my doubts?"
+
+    def test_normalizes_nira_naira(self):
+        from core.stt import normalize_transcript
+        assert normalize_transcript("Hey nira what is the weather") == "Hey Nyra what is the weather"
+        assert normalize_transcript("Hello naira") == "Hello Nyra"
+        assert normalize_transcript("Hello near a") == "Hello Nyra"
+
+    def test_preserves_other_text(self):
+        from core.stt import normalize_transcript
+        assert normalize_transcript("Hello Nyra, how are you?") == "Hello Nyra, how are you?"
+        assert normalize_transcript("") == ""
+
+
 # ---------------------------------------------------------------------------
 # WhisperTranscriber tests (requires model download ~150MB on first run)
 # ---------------------------------------------------------------------------
